@@ -43,7 +43,6 @@ def new_community():
     creation_date = datetime.datetime.now()
     cursor.execute("INSERT INTO Community VALUES (%s, %s, %s, %s, %s, %s)", (ID, name, address, city, zip_code,\
     creation_date))
-    # cursor.execute("INSERT INTO Community VALUES ()
     conn.commit()
     return "Community " + name + " added."
 
@@ -124,6 +123,15 @@ def add_complaint():
     }
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
+
+@app.route('/get_all_community', methods = ['GET'])
+def get_all_community():
+    cursor.execute("""SELECT DISTINCT name FROM Community""")
+    result = cursor.fetchall()
+    communities = []
+    for item in result:
+        communities.append(item[0])
+    return json.dumps(communities)
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
