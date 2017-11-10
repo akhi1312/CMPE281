@@ -35,6 +35,8 @@ db = client['socialcommunity']
 #create new community
 @app.route('/new_community', methods = ['POST'])
 def new_community():
+    if not request.json or not 'name' in request.json or not 'address' in request.json or not city in request.json or not zip_code in request.json:
+        abort(400)
     ID = request.json['ID']
     name = request.json['name']
     address = request.json['address']
@@ -49,6 +51,8 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['POST'])
 def new_user():
+    if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
+        abort(400)
     username = request.json['username']
     communityID = request.json['communityID']
     firstName = request.json['firstName']
@@ -124,6 +128,7 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
+#get all the distict communities
 @app.route('/get_all_community', methods = ['GET'])
 def get_all_community():
     cursor.execute("""SELECT DISTINCT name FROM Community""")
