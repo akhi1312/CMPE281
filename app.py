@@ -107,6 +107,7 @@ def add_message():
         'message_date': datetime.datetime.now()
     }
     result = messages.insert_one(message_data)
+    return ('One message: {0}'.format(result.inserted_id))
 
 #add complaint
 @app.route('/add_complaint', methods = ['POST'])
@@ -122,6 +123,7 @@ def add_complaint():
         'status':request.json['status']
     }
     result = complaints.insert_one(complaint_data)
+    return ('One complaint: {0}'.format(result.inserted_id))
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
