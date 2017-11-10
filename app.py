@@ -40,11 +40,12 @@ def new_community():
     address = request.json['address']
     city = request.json['city']
     zip_code = request.json['zip_code']
-    creation_date = request.json['creation_date']
-    cursor.execute("INSERT INTO Community VALUES (%s, %s, %s, %s)", (ID, name, address, city, zip_code,\
+    creation_date = datetime.datetime.now()
+    cursor.execute("INSERT INTO Community VALUES (%s, %s, %s, %s, %s, %s)", (ID, name, address, city, zip_code,\
     creation_date))
+    # cursor.execute("INSERT INTO Community VALUES ()
     conn.commit()
-    return "Community " + u + " added."
+    return "Community " + name + " added."
 
 #create new user
 @app.route('/sign_up', methods = ['POST'])
@@ -59,7 +60,7 @@ def new_user():
     cursor.execute("INSERT INTO Users VALUES (%s, %s, %s, %s, %s, %s, %s)", (username, communityID, firstName,\
     lastName, email, password, contact_number))
     conn.commit()
-    return "User " + u + " added."
+    return "User " + firstName + " added."
 
 #add new post
 @app.route('/add_post', methods = ['POST'])
@@ -71,8 +72,10 @@ def add_post():
         'author': request.json['author'],
         'attachment': request.json['attachment'],
         'posted_date': datetime.datetime.now(),
+        'comments': []
     }
     result = posts.insert_one(post_data)
+    return ('One post: {0}'.format(result.inserted_id))
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -88,6 +91,7 @@ def add_post_comment():
             }
         }
     )
+    return ("Comment Added to post " + str(request.json['_id']))
 
 #add message
 @app.route('/add_message', methods = ['POST'])
@@ -118,8 +122,6 @@ def add_complaint():
         'status':request.json['status']
     }
     result = complaints.insert_one(complaint_data)
-
-conn.close()
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
