@@ -3,7 +3,6 @@ import json
 import psycopg2
 import sys
 import pprint
-from passlib.apps import custom_app_context as pwd_context
 from pymongo import MongoClient
 import datetime
 import pprint
@@ -13,6 +12,7 @@ app = Flask(__name__)
 #Enter the values for you database connection
 dsn_database = "socialCommunity"
 dsn_hostname =  "social-community.cznwlohjgx0g.us-west-2.rds.amazonaws.com"
+dsn_port = "5432"
 dsn_uid = "myawsuser"
 dsn_pwd = "myawsuser"
 
@@ -20,7 +20,7 @@ dsn_pwd = "myawsuser"
 try:
     conn_string = "host="+dsn_hostname+" port="+dsn_port+" dbname="+dsn_database+" user="+dsn_uid+" password="+dsn_pwd
     print "Connecting\n"
-    conn=psycopg2.connect(conn_string)
+    conn = psycopg2.connect(conn_string)
     print "Connected!\n"
 except:
     print "Unable to connect to the database."
@@ -104,21 +104,6 @@ def add_message():
     }
     result = messages.insert_one(message_data)
 
-#add message
-@app.route('/add_message', methods = ['POST'])
-def add_message():
-    messages = db.messages
-    message_data = {
-        'fromCommunityID': request.json['fromCommunityID'],
-        'fromUserId':request.json['fromUserId'],
-        'subject': request.json['subject'],
-        'content': request.json['content'],
-        'toUserId': request.json['toUserId'],
-        'toCommunityId': request.json['toCommunityId'],
-        'message_date': datetime.datetime.now()
-    }
-    result = messages.insert_one(message_data)
-
 #add complaint
 @app.route('/add_complaint', methods = ['POST'])
 def add_complaint():
@@ -133,6 +118,8 @@ def add_complaint():
         'status':request.json['status']
     }
     result = complaints.insert_one(complaint_data)
+
+conn.close()
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
