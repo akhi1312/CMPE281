@@ -1,5 +1,6 @@
 from index import db
 from passlib.apps import custom_app_context as pwd_context
+from flask_login import UserMixin
 
 class Community(db.Model):
     __tablename__ = 'community'
@@ -10,7 +11,7 @@ class Community(db.Model):
     zip_code = db.Column(db.Integer, index=True, unique=False)
     creation_date = db.Column(db.DateTime, index=True, unique=False, default=False)
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     username = db.Column(db.String(128), primary_key=True)
     communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), index=True)
@@ -25,3 +26,7 @@ class User(db.Model):
 
     def verify_password(self, password):
         return pwd_context.verify(password, self.password)
+
+    def get_id(self):
+        return unicode(self.username)
+
