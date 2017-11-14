@@ -21,12 +21,15 @@ except:
 
 cursor = conn.cursor()
 
+# cursor.execute("DROP TABLE IF EXISTS users CASCADE")
+# cursor.execute("DROP TABLE IF EXISTS Users CASCADE")
+# cursor.execute("DROP TABLE IF EXISTS community1 CASCADE")
 #Community Query
-cursor.execute("INSERT INTO Community (name, address, city, zip_code, creation_date)VALUES('Community1', 'avalon', 'San Jose', 95112, current_timestamp)")
-
-# Users query
-
-cursor.execute("INSERT INTO Users VALUES('rahil15', 1, 'rahil', 'modi', 'rahil@gmail.com', 'rahil', '1111111111')")
+# cursor.execute("INSERT INTO Community (name, address, city, zip_code, creation_date)VALUES('Community1', 'avalon', 'San Jose', 95112, current_timestamp)")
+#
+# # Users query
+#
+# cursor.execute("INSERT INTO Users VALUES('rahil15', 1, 'rahil', 'modi', 'rahil@gmail.com', 'rahil', '1111111111')")
 
 # cursor.execute("INSERT INTO Users VALUES('rahil15', 1, 'rm@gmail.com','rahil', '1111111111')")
 # cursor.execute("DROP TABLE IF EXISTS Users CASCADE")
@@ -48,14 +51,14 @@ cursor.execute("INSERT INTO Users VALUES('rahil15', 1, 'rahil', 'modi', 'rahil@g
 
 conn.commit()
 
-cursor.execute("""SELECT * from Community""")
+cursor.execute("""SELECT * from community""")
 rows = cursor.fetchall()
 
 print "\nShow me the databases:\n"
 pprint.pprint(rows)
 
-cursor.execute("""SELECT * from Users""")
-rows = cursor.fetchall()
-
-print "\nShow me the databases:\n"
-pprint.pprint(rows)
+# cursor.execute("""SELECT * from Users""")
+# rows = cursor.fetchall()
+#
+# print "\nShow me the databases:\n"
+# pprint.pprint(rows)
