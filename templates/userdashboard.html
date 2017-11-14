@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block page_content %}
+    <div class="row">
+        <div class="col-md-9">
+            <div class="row">
+                <form style="width:100%" method="POST" action="add_post">
+                    <input required type="text" class="form-control" placeholder="Title"/>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-10">
+                            <textarea required class="form-control" maxlength="200" rows="3" placeholder="Description" ></textarea>
+                        </div>
+                        <div class="col-md-1"></div>
+                        <div class="col-md-1 align-self-center">
+                            <input class="btn btn-lg submit-btn pull-right inline" type="submit" value="Post!" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!--{% for post in posts %}-->
+            <!--<div class="row">-->
+                <!--<h2>{{post.title}}</h2>-->
+                <!--<p>{{post.content}}</p>-->
+            <!--</div>-->
+            <!--{% endfor %}-->
+        </div>
+        <div class="col-md-3">
+            <h2>Hello</h2>
+        </div>
+    </div>
+{% endblock %}
