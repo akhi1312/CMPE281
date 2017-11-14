@@ -21,7 +21,7 @@ except:
 
 cursor = conn.cursor()
 
-# cursor.execute("DROP TABLE IF EXISTS users CASCADE")
+cursor.execute("DROP TABLE IF EXISTS users CASCADE")
 # cursor.execute("DROP TABLE IF EXISTS Users CASCADE")
 # cursor.execute("DROP TABLE IF EXISTS community1 CASCADE")
 #Community Query
@@ -51,11 +51,11 @@ cursor = conn.cursor()
 
 conn.commit()
 
-cursor.execute("""SELECT * from community""")
-rows = cursor.fetchall()
-
-print "\nShow me the databases:\n"
-pprint.pprint(rows)
+# cursor.execute("""SELECT * from community""")
+# rows = cursor.fetchall()
+#
+# print "\nShow me the databases:\n"
+# pprint.pprint(rows)
 
 # cursor.execute("""SELECT * from Users""")
 # rows = cursor.fetchall()
