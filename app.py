@@ -9,6 +9,10 @@ import sys
 import datetime
 from index import app, db, mongo,logger
 from models import Community, User
+import  myexception
+from flask_httpauth import HTTPBasicAuth
+
+auth = HTTPBasicAuth()
 
 class LoginForm(Form):
     username = StringField('username',validators=[InputRequired(),Length(min=4,max=15)])
@@ -29,29 +33,6 @@ class RegistrationForm(Form):
 #     if form.validate_on_submit():
 #         return '<h1>'+form.username.data+' '+form.password.data+'</h2>'
 #     return render_template('signup.html',form=form)
-
-#Enter the values for you database connection
-# dsn_database = "socialCommunity"
-# dsn_hostname =  "social-community.cznwlohjgx0g.us-west-2.rds.amazonaws.com"
-# dsn_port = "5432"
-# dsn_uid = "myawsuser"
-# dsn_pwd = "myawsuser"
-#
-# #connecting to RDS AWS
-# try:
-#     conn_string = "host="+dsn_hostname+" port="+dsn_port+" dbname="+dsn_database+" user="+dsn_uid+" password="+dsn_pwd
-#     print "Connecting\n"
-#     conn = psycopg2.connect(conn_string)
-#     print "Connected!\n"
-# except:
-#     print "Unable to connect to the database."
-#
-# #connection cursor to RDS
-# cursor = conn.cursor()
-#
-# #connecting to MongoDB
-# client = MongoClient("mongodb://admin:admin@ds251845.mlab.com:51845/socialcommunity")
-# db = client['socialcommunity']
 
 #create new community
 @app.route('/new_community', methods = ['POST'])
@@ -78,8 +59,8 @@ def new_user():
     form = RegistrationForm()
     if request.method == 'GET':
         return render_template('signup.html',form=form)
-    if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
-        abort(400)
+    # if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
+    #     abort(400)
     username = request.json['username']
     communityID = request.json['communityID']
     firstName = request.json['firstName']
@@ -87,13 +68,44 @@ def new_user():
     email = request.json['email']
     password = request.json['password']
     contact_number = request.json['contact_number']
+    # if username == '' or password == '':
+    #     raise myexception.Unauthorized("Please enter username and password", 401)
+    # elif User.query.filter_by(username = username).first() is not None:
+    #     raise myexception.UserExists("User Already exists", 402)
+    # else:
     user = User(username = username, communityID = communityID,
     firstName = firstName, lastName=lastName,
-    email = email, password=password,
-    contact_number = contact_number)
+    email = email, contact_number = contact_number)
+    user.hash_password(password)
     db.session.add(user)
     db.session.commit()
     return "User " + firstName + " added."
+
+@app.route('/login', methods=['POST'])
+def authenticate():
+    # if session['logged_in'] == False:
+    username = request.json['username']
+    password = request.json['password']
+    if username is None or password is None:
+        # raise myexception.Unauthorized("Please enter username and password", 401)
+        return ("Please enter username and/or password")
+        # abort(400)  # missing arguments
+    elif User.query.filter_by(username=username).first() is not None:
+        verify_password(username,password)
+        if session['logged_in'] == True:
+            return ("Access Granted and logged in")
+
+@auth.verify_password
+def verify_password(username, password):
+    user = User.query.filter_by(username = username).first()
+    if not user or not user.verify_password(password):
+        # raise myexception.Unauthorized("Invalid username or password", 401)
+        return ("Invalid username or password")
+        # return False
+    g.user = user
+    session['logged_in'] = True
+    # raise myexception.Unauthorized("Access Granted and logged in", 200)
+    # return ("Access Granted and logged in")
 
 #add new post
 @app.route('/add_post', methods = ['POST'])
