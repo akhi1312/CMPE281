@@ -1,4 +1,5 @@
 from index import db
+from passlib.apps import custom_app_context as pwd_context
 
 class Community(db.Model):
     __tablename__ = 'community'
@@ -16,5 +17,11 @@ class User(db.Model):
     firstName = db.Column(db.String(128), index=True, unique=False)
     lastName = db.Column(db.String(15), index=True, unique=False)
     email = db.Column(db.String(15), index=True, unique=True)
-    password = db.Column(db.String(15), index=True, unique=False)
+    password = db.Column(db.String(256), index=True, unique=False)
     contact_number = db.Column(db.String(30), index=True, unique=False)
+
+    def hash_password(self, password):
+        self.password = pwd_context.encrypt(password)
+
+    def verify_password(self, password):
+        return pwd_context.verify(password, self.password)
