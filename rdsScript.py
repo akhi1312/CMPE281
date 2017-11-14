@@ -54,8 +54,8 @@ rows = cursor.fetchall()
 print "\nShow me the databases:\n"
 pprint.pprint(rows)
 
-cursor.execute("""SELECT * from Users""")
-rows = cursor.fetchall()
-
-print "\nShow me the databases:\n"
-pprint.pprint(rows)
+# cursor.execute("""SELECT * from Users""")
+# rows = cursor.fetchall()
+#
+# print "\nShow me the databases:\n"
+# pprint.pprint(rows)
