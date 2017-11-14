@@ -1,23 +1,14 @@
 from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify,g
-from flask_bootstrap import Bootstrap
 from flask_wtf import Form
 from wtforms import StringField, PasswordField, BooleanField, IntegerField
 from wtforms.validators import InputRequired, Email, Length, NumberRange
-from flask_sqlalchemy import SQLAlchemy
 import json
 import psycopg2
 import os
 import sys
-import pprint
-from pymongo import MongoClient
 import datetime
-import pprint
-
-app = Flask(__name__)
-
-Bootstrap(app)
-app.config['SECRET_KEY'] = os.urandom(32)
-db=SQLAlchemy()
+from index import app, db, mongo,logger
+from models import Community, User
 
 class LoginForm(Form):
     username = StringField('username',validators=[InputRequired(),Length(min=4,max=15)])
@@ -40,42 +31,45 @@ class RegistrationForm(Form):
 #     return render_template('signup.html',form=form)
 
 #Enter the values for you database connection
-dsn_database = "socialCommunity"
-dsn_hostname =  "social-community.cznwlohjgx0g.us-west-2.rds.amazonaws.com"
-dsn_port = "5432"
-dsn_uid = "myawsuser"
-dsn_pwd = "myawsuser"
-
-#connecting to RDS AWS
-try:
-    conn_string = "host="+dsn_hostname+" port="+dsn_port+" dbname="+dsn_database+" user="+dsn_uid+" password="+dsn_pwd
-    print "Connecting\n"
-    conn = psycopg2.connect(conn_string)
-    print "Connected!\n"
-except:
-    print "Unable to connect to the database."
-
-#connection cursor to RDS
-cursor = conn.cursor()
-
-#connecting to MongoDB
-client = MongoClient("mongodb://admin:admin@ds251845.mlab.com:51845/socialcommunity")
-db = client['socialcommunity']
+# dsn_database = "socialCommunity"
+# dsn_hostname =  "social-community.cznwlohjgx0g.us-west-2.rds.amazonaws.com"
+# dsn_port = "5432"
+# dsn_uid = "myawsuser"
+# dsn_pwd = "myawsuser"
+#
+# #connecting to RDS AWS
+# try:
+#     conn_string = "host="+dsn_hostname+" port="+dsn_port+" dbname="+dsn_database+" user="+dsn_uid+" password="+dsn_pwd
+#     print "Connecting\n"
+#     conn = psycopg2.connect(conn_string)
+#     print "Connected!\n"
+# except:
+#     print "Unable to connect to the database."
+#
+# #connection cursor to RDS
+# cursor = conn.cursor()
+#
+# #connecting to MongoDB
+# client = MongoClient("mongodb://admin:admin@ds251845.mlab.com:51845/socialcommunity")
+# db = client['socialcommunity']
 
 #create new community
 @app.route('/new_community', methods = ['POST'])
 def new_community():
-    if not request.json or not 'name' in request.json or not 'address' in request.json or not city in request.json or not zip_code in request.json:
+    if not request.json or not 'name' in request.json or not 'address' in request.json or not 'city' in request.json or not 'zip_code' in request.json:
         abort(400)
-    ID = request.json['ID']
+    logger.debug("Received Request by user %s", request.json)
     name = request.json['name']
     address = request.json['address']
     city = request.json['city']
     zip_code = request.json['zip_code']
     creation_date = datetime.datetime.now()
-    cursor.execute("INSERT INTO Community VALUES (%s, %s, %s, %s, %s, %s)", (ID, name, address, city, zip_code,\
-    creation_date))
-    conn.commit()
+    com = Community(name = name, address = address,
+    city = city,
+    zip_code = zip_code,
+    creation_date = creation_date)
+    db.session.add(com)
+    db.session.commit()
     return "Community " + name + " added."
 
 #create new user
@@ -93,15 +87,18 @@ def new_user():
     email = request.json['email']
     password = request.json['password']
     contact_number = request.json['contact_number']
-    cursor.execute("INSERT INTO Users VALUES (%s, %s, %s, %s, %s, %s, %s)", (username, communityID, firstName,\
-    lastName, email, password, contact_number))
-    conn.commit()
+    user = User(username = username, communityID = communityID,
+    firstName = firstName, lastName=lastName,
+    email = email, password=password,
+    contact_number = contact_number)
+    db.session.add(user)
+    db.session.commit()
     return "User " + firstName + " added."
 
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
-    posts = db.posts
+    posts = mongo.posts
     post_data = {
         'title': request.json['title'],
         'content': request.json['content'],
@@ -116,7 +113,7 @@ def add_post():
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
 def add_post_comment():
-    db.posts.update_one(
+    mongo.posts.update_one(
     {"_id": request.json['_id']},
     {"$push": {
         'comments': {
@@ -132,7 +129,7 @@ def add_post_comment():
 #add message
 @app.route('/add_message', methods = ['POST'])
 def add_message():
-    messages = db.messages
+    messages = mongo.messages
     message_data = {
         'fromCommunityID': request.json['fromCommunityID'],
         'fromUserId':request.json['fromUserId'],
@@ -148,7 +145,7 @@ def add_message():
 #add complaint
 @app.route('/add_complaint', methods = ['POST'])
 def add_complaint():
-    complaints = db.complaints
+    complaints = mongo.complaints
     complaint_data = {
         'communityID': request.json['communityID'],
         'category': request.json['category'],
@@ -164,12 +161,9 @@ def add_complaint():
 #get all the distict communities
 @app.route('/get_all_community', methods = ['GET'])
 def get_all_community():
-    cursor.execute("""SELECT DISTINCT name FROM Community""")
-    result = cursor.fetchall()
-    communities = []
-    for item in result:
-        communities.append(item[0])
-    return json.dumps(communities)
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return json.dumps(communities_name)
 
 @app.route('/')
 def home():
