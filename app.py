@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify,g
-from flask_wtf import Form
-from wtforms import StringField, PasswordField, BooleanField, IntegerField
-from wtforms.validators import InputRequired, Email, Length, NumberRange
+
+from flask_bootstrap import Bootstrap
+from flask_sqlalchemy import SQLAlchemy
+from Forms import LoginForm, RegistrationForm
+from index import app, db, mongo,logger
+from models import Community, User
 import json
 import psycopg2
 import os
@@ -13,19 +16,13 @@ import  myexception
 from flask_httpauth import HTTPBasicAuth
 
 auth = HTTPBasicAuth()
+import pprint
 
-class LoginForm(Form):
-    username = StringField('username',validators=[InputRequired(),Length(min=4,max=15)])
-    password = PasswordField('password',validators=[InputRequired(),Length(min=8, max=80)])
-    remember = BooleanField('remember me',default=False)
+app = Flask(__name__)
 
-class RegistrationForm(Form):
-    email = StringField('Email:',validators=[InputRequired(),Email(message='Invalid email'),Length(max=50)])
-    username = StringField('Username:', validators=[InputRequired(), Length(min=4, max=15)])
-    firstname = StringField('Firstname:', validators=[InputRequired(), Length(min=4, max=30)])
-    lastname = StringField('Lastname:', validators=[InputRequired(), Length(min=4, max=30)])
-    contact = IntegerField('Contact:', validators=[InputRequired(), NumberRange(min=10,max=10)])
-    password = PasswordField('Password:',validators=[InputRequired(),Length(min=8, max=80)])
+Bootstrap(app)
+app.config['SECRET_KEY'] = os.urandom(32)
+
 
 # @app.route('/signup', methods=['GET','POST'])
 # def signup():
@@ -179,7 +176,7 @@ def get_all_community():
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('userdashboard.html')
 
 @app.route('/login', methods=['GET','POST'])
 def login():
