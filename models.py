@@ -1,4 +1,5 @@
 from index import db
+from flask_login import UserMixin
 
 class Community(db.Model):
     __tablename__ = 'community'
@@ -9,7 +10,7 @@ class Community(db.Model):
     zip_code = db.Column(db.Integer, index=True, unique=False)
     creation_date = db.Column(db.DateTime, index=True, unique=False, default=False)
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     username = db.Column(db.String(128), primary_key=True)
     communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), index=True)
@@ -18,3 +19,10 @@ class User(db.Model):
     email = db.Column(db.String(15), index=True, unique=True)
     password = db.Column(db.String(15), index=True, unique=False)
     contact_number = db.Column(db.String(30), index=True, unique=False)
+
+    def get_id(self):
+        return unicode(self.username)
+
+
+
+
