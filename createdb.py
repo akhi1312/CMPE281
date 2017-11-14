@@ -1,5 +1,5 @@
-from app import db
-from models import Community, User
+from index import db
+from models import User, Community
 
 db.create_all()
 
