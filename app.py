@@ -1,6 +1,12 @@
 from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify,g
+from flask_bootstrap import Bootstrap
+from flask_wtf import Form
+from wtforms import StringField, PasswordField, BooleanField, IntegerField
+from wtforms.validators import InputRequired, Email, Length, NumberRange
+from flask_sqlalchemy import SQLAlchemy
 import json
 import psycopg2
+import os
 import sys
 import pprint
 from pymongo import MongoClient
@@ -8,6 +14,30 @@ import datetime
 import pprint
 
 app = Flask(__name__)
+
+Bootstrap(app)
+app.config['SECRET_KEY'] = os.urandom(32)
+db=SQLAlchemy()
+
+class LoginForm(Form):
+    username = StringField('username',validators=[InputRequired(),Length(min=4,max=15)])
+    password = PasswordField('password',validators=[InputRequired(),Length(min=8, max=80)])
+    remember = BooleanField('remember me',default=False)
+
+class RegistrationForm(Form):
+    email = StringField('Email:',validators=[InputRequired(),Email(message='Invalid email'),Length(max=50)])
+    username = StringField('Username:', validators=[InputRequired(), Length(min=4, max=15)])
+    firstname = StringField('Firstname:', validators=[InputRequired(), Length(min=4, max=30)])
+    lastname = StringField('Lastname:', validators=[InputRequired(), Length(min=4, max=30)])
+    contact = IntegerField('Contact:', validators=[InputRequired(), NumberRange(min=10,max=10)])
+    password = PasswordField('Password:',validators=[InputRequired(),Length(min=8, max=80)])
+
+# @app.route('/signup', methods=['GET','POST'])
+# def signup():
+#     form = RegisterForm()
+#     if form.validate_on_submit():
+#         return '<h1>'+form.username.data+' '+form.password.data+'</h2>'
+#     return render_template('signup.html',form=form)
 
 #Enter the values for you database connection
 dsn_database = "socialCommunity"
@@ -49,8 +79,11 @@ def new_community():
     return "Community " + name + " added."
 
 #create new user
-@app.route('/sign_up', methods = ['POST'])
+@app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
+    form = RegistrationForm()
+    if request.method == 'GET':
+        return render_template('signup.html',form=form)
     if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
         abort(400)
     username = request.json['username']
@@ -137,6 +170,17 @@ def get_all_community():
     for item in result:
         communities.append(item[0])
     return json.dumps(communities)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        return redirect(url_for('home'))
+    return render_template('login.html',form=form)
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
