@@ -15,10 +15,10 @@ class User(db.Model):
     username = db.Column(db.String(128), primary_key=True)
     communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), index=True)
     firstName = db.Column(db.String(128), index=True, unique=False)
-    lastName = db.Column(db.String(15), index=True, unique=False)
-    email = db.Column(db.String(15), index=True, unique=True)
+    lastName = db.Column(db.String(128), index=True, unique=False)
+    email = db.Column(db.String(128), index=True, unique=True)
     password = db.Column(db.String(256), index=True, unique=False)
-    contact_number = db.Column(db.String(30), index=True, unique=False)
+    contact_number = db.Column(db.String(10), index=True, unique=False)
 
     def hash_password(self, password):
         self.password = pwd_context.encrypt(password)
