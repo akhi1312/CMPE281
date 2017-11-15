@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<div class="content-section">
+  <div class="row justify-content-center">
+    <div class="col-6">
+        <form method="POST" action="/new_community">
+          <h1>Create Community:</h1>
+            {{form.hidden_tag()}}
+            {{wtf.form_field(form.name)}}
+            {{wtf.form_field(form.address)}}
+            {{wtf.form_field(form.city)}}
+            {{wtf.form_field(form.zip_code)}}
+            <button class = "btn btn-md btn-primary btn-block">Add</button>
+        </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
