@@ -74,30 +74,30 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
-    form = RegistrationForm()
-    if request.method == 'GET':
-        return render_template('signup.html',form=form)
-    # if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
-    #     abort(400)
-    username = request.json['username']
-    communityID = request.json['communityID']
-    firstName = request.json['firstName']
-    lastName = request.json['lastName']
-    email = request.json['email']
-    password = request.json['password']
-    contact_number = request.json['contact_number']
-    # if username == '' or password == '':
-    #     raise myexception.Unauthorized("Please enter username and password", 401)
-    # elif User.query.filter_by(username = username).first() is not None:
-    #     raise myexception.UserExists("User Already exists", 402)
-    # else:
-    user = User(username = username, communityID = communityID,
-    firstName = firstName, lastName=lastName,
-    email = email, contact_number = contact_number)
-    user.hash_password(password)
-    db.session.add(user)
-    db.session.commit()
-    return "User " + firstName + " added."
+    # form = RegistrationForm()
+    # if request.method == 'GET':
+    #     return render_template('signup.html',form=form)
+    # # if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
+    # #     abort(400)
+    # username = request.json['username']
+    # communityID = request.json['communityID']
+    # firstName = request.json['firstName']
+    # lastName = request.json['lastName']
+    # email = request.json['email']
+    # password = request.json['password']
+    # contact_number = request.json['contact_number']
+    # # if username == '' or password == '':
+    # #     raise myexception.Unauthorized("Please enter username and password", 401)
+    # # elif User.query.filter_by(username = username).first() is not None:
+    # #     raise myexception.UserExists("User Already exists", 402)
+    # # else:
+    # user = User(username = username, communityID = communityID,
+    # firstName = firstName, lastName=lastName,
+    # email = email, contact_number = contact_number)
+    # user.hash_password(password)
+    # db.session.add(user)
+    # db.session.commit()
+    # return "User " + firstName + " added."
     communityNames = getListOfCommunities()
     form = RegistrationForm(communityNames)
     if form.validate_on_submit():
