@@ -29,25 +29,19 @@ login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
 login_manager.login_view = 'login'
 
-
-# @app.route('/signup', methods=['GET','POST'])
-# def signup():
-#     form = RegisterForm()
-#     if form.validate_on_submit():
-#         return '<h1>'+form.username.data+' '+form.password.data+'</h2>'
-#     return render_template('signup.html',form=form)
-
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
 def new_community():
     form = commuityRegistraion()
     if form.validate_on_submit():
         name = form.name.data
+        desc = form.desc.data
         address = form.address.data
         city = form.city.data
         zip_code = form.zip_code.data
         creation_date = datetime.datetime.now()
         com = Community(name=name,
+                        description=desc,
                         address=address,
                         city=city,
                         zip_code=zip_code,
@@ -55,55 +49,14 @@ def new_community():
         db.session.add(com)
         db.session.commit()
         return '<h1>New Community is created</h1>'
-    # if not request.json or not 'name' in request.json or not 'address' in request.json or not 'city' in request.json or not 'zip_code' in request.json:
-    #     abort(400)
-    # logger.debug("Received Request by user %s", request.json)
-    # name = request.json['name']
-    # address = request.json['address']
-    # city = request.json['city']
-    # zip_code = request.json['zip_code']
-    # creation_date = datetime.datetime.now()
-    # com = Community(name = name, address = address,
-    # city = city,
-    # zip_code = zip_code,
-    # creation_date = creation_date)
-    # db.session.add(com)
-    # db.session.commit()
     return render_template('newCommunity.html',form=form)
 
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
-    # form = RegistrationForm()
-    # if request.method == 'GET':
-    #     return render_template('signup.html',form=form)
-    # # if not request.json or not "contact_number" in request.json or not "username" in request.json or not "communityID" in request.json or not "email" in request.json or not "password" in request.json:
-    # #     abort(400)
-    # username = request.json['username']
-    # communityID = request.json['communityID']
-    # firstName = request.json['firstName']
-    # lastName = request.json['lastName']
-    # email = request.json['email']
-    # password = request.json['password']
-    # contact_number = request.json['contact_number']
-    # # if username == '' or password == '':
-    # #     raise myexception.Unauthorized("Please enter username and password", 401)
-    # # elif User.query.filter_by(username = username).first() is not None:
-    # #     raise myexception.UserExists("User Already exists", 402)
-    # # else:
-    # user = User(username = username, communityID = communityID,
-    # firstName = firstName, lastName=lastName,
-    # email = email, contact_number = contact_number)
-    # user.hash_password(password)
-    # db.session.add(user)
-    # db.session.commit()
-    # return "User " + firstName + " added."
-    communityNames = getListOfCommunities()
-    form = RegistrationForm(communityNames)
+    form = RegistrationForm()
     if form.validate_on_submit():
         username = form.username.data
-        communityName = dict(communityNames).get(form.community.data)
-        communityId = getCommunityId(communityName);
         firstName = form.firstname.data
         lastName = form.lastname.data
         email = form.email.data
@@ -111,7 +64,6 @@ def new_user():
         password = hashed_password
         contact_number = form.contact.data
         new_user = User(username = username,
-                        communityID = communityId,
                         firstName = firstName,
                         lastName=lastName,
                         email = email,

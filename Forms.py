@@ -12,18 +12,11 @@ class LoginForm(Form):
 class RegistrationForm(Form):
     """User Registration Form"""
 
-
-    def __init__(self, communities, *args,**kwargs):
-        super(RegistrationForm, self).__init__(*args, **kwargs)
-        self.community.choices = communities
-        print communities
     email = StringField('Email:',validators=[InputRequired(),Email(message='Invalid email'),Length(max=50)])
     username = StringField('Username:', validators=[InputRequired(), Length(min=4, max=15)])
     firstname = StringField('Firstname:', validators=[InputRequired(), Length(min=4, max=30)])
     lastname = StringField('Lastname:', validators=[InputRequired(), Length(min=4, max=30)])
     contact = IntegerField('Contact:', validators=[InputRequired()])
-    community = SelectField(u'Residential community:',coerce=int)
-    # community = SelectField('Residential community:',choices = communityNames,validators=[InputRequired()])
     password = PasswordField('Password:',validators=[InputRequired(),Length(min=8, max=80)])
 
     # def validateEmail(self,_email):
@@ -37,6 +30,7 @@ class RegistrationForm(Form):
 class commuityRegistraion(Form):
     """User Registration Form"""
     name = StringField('Name:', validators=[InputRequired(), Length(max=50)])
+    desc = StringField('Description:',validators=[Length(max=256)])
     address = StringField('Address:', validators=[InputRequired(), Length(min=4, max=50)])
     city = StringField('City:', validators=[InputRequired(), Length(max=30)])
     zip_code = IntegerField('ZipCode:', validators=[InputRequired()])
