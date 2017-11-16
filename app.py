@@ -54,12 +54,8 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
-<<<<<<< HEAD
     form = RegistrationForm()
-=======
-    communityNames = getListOfCommunities()
-    form = RegistrationForm(communityNames)
->>>>>>> 70c808b8ab7d626234f0c246bd47c54c920d3b36
+
     if form.validate_on_submit():
         username = form.username.data
         firstName = form.firstname.data
