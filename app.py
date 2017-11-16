@@ -54,7 +54,12 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
+<<<<<<< HEAD
     form = RegistrationForm()
+=======
+    communityNames = getListOfCommunities()
+    form = RegistrationForm(communityNames)
+>>>>>>> 70c808b8ab7d626234f0c246bd47c54c920d3b36
     if form.validate_on_submit():
         username = form.username.data
         firstName = form.firstname.data
@@ -76,7 +81,6 @@ def new_user():
 
 @app.route('/login', methods=['POST'])
 def authenticate():
-    # if session['logged_in'] == False:
     username = request.json['username']
     password = request.json['password']
     if username is None or password is None:

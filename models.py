@@ -6,6 +6,7 @@ class Community(db.Model):
     __tablename__ = 'community'
     ID = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(60), index=True, unique=True)
+    descriptiom = name = db.Column(db.String(256), index=True)
     address = db.Column(db.String(128), index=True, unique=False)
     city = db.Column(db.String(15), index=True, unique=False)
     zip_code = db.Column(db.Integer, index=True, unique=False)
@@ -14,7 +15,6 @@ class Community(db.Model):
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     username = db.Column(db.String(128), primary_key=True)
-    communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), index=True)
     firstName = db.Column(db.String(128), index=True, unique=False)
     lastName = db.Column(db.String(128), index=True, unique=False)
     email = db.Column(db.String(128), index=True, unique=True)
@@ -29,4 +29,3 @@ class User(UserMixin, db.Model):
 
     def get_id(self):
         return unicode(self.username)
-
