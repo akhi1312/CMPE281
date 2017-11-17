@@ -11,6 +11,7 @@ class Community(db.Model):
     city = db.Column(db.String(15), index=True, unique=False)
     zip_code = db.Column(db.Integer, index=True, unique=False)
     creation_date = db.Column(db.DateTime, index=True, unique=False, default=False)
+    status = db.Column(db.String(60), index=True, default="requested")
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -33,7 +34,7 @@ class User(UserMixin, db.Model):
 class UserModerator(db.Model):
     __tablename__ = 'user_moderator'
     communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), primary_key=True)
-    moderator = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
+    moderator = db.Column(db.String(128), db.ForeignKey('users.username'), unique=True)
 
 class UserCommunity(db.Model):
     __tablename__ = 'user_community'

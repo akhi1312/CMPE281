@@ -13,7 +13,7 @@ import os
 import sys
 import datetime
 from index import app, db, mongo,logger
-from models import Community, User
+from models import Community, User, UserCommunity, UserModerator
 import  myexception
 from flask_httpauth import HTTPBasicAuth
 from awsServices import send_email, sendMessage
@@ -155,13 +155,6 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
-#get all the distict communities
-@app.route('/get_all_community', methods = ['GET'])
-def get_all_community():
-    communities = Community.query.all()
-    communities_name = [community.name for community in communities]
-    return json.dumps(communities_name)
-
 @app.route('/home')
 @login_required
 def home():
@@ -192,6 +185,33 @@ def getListOfCommunities():
 def getCommunityId(communityName):
     communityObj = Community.query.filter_by(name = communityName).first()
     return communityObj.ID
+
+#get users in a community
+@app.route('/get_community_users', methods = ['POST'])
+@login_required
+def getCommunityUsers():
+    communityName = request.json['communityName'].lower()
+    communityObj = Community.query.filter_by(name = communityName).first()
+    communityUsers = UserCommunity.query.filter_by(communityID=communityObj.ID)
+    users_list = []
+    for item in communityUsers.all():
+        users_list.append(item.userID)
+    return json.dumps(users_list)
+
+#get users in a community
+@app.route('/get_community_list', methods = ['GET'])
+@login_required
+def getCommunityList():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return json.dumps(communities_name)
+
+
+#post according to user
+#post acc. to community
+#message inbox user
+#message sent user
+
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
