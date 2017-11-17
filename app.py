@@ -34,16 +34,22 @@ login_manager.login_view = 'login'
 def new_community():
     form = commuityRegistraion()
     if form.validate_on_submit():
-        name = form.name.data
+        name = form.name.data.lower()
+        desc = form.desc.data
         address = form.address.data
         city = form.city.data
         zip_code = form.zip_code.data
         creation_date = datetime.datetime.now()
         com = Community(name=name,
+                        description=desc,
                         address=address,
                         city=city,
                         zip_code=zip_code,
                         creation_date=creation_date)
+        if Community.query.filter_by(name=name).first() is not None:
+            flash("Community name already exists")
+            form = commuityRegistraion()
+            return render_template('newCommunity.html',form=form)
         db.session.add(com)
         db.session.commit()
         return '<h1>New Community is created</h1>'
@@ -52,12 +58,9 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
-    communityNames = getListOfCommunities()
-    form = RegistrationForm(communityNames)
+    form = RegistrationForm()
     if form.validate_on_submit():
-        username = form.username.data
-        communityName = dict(communityNames).get(form.community.data)
-        communityId = getCommunityId(communityName);
+        username = form.username.data.lower()
         firstName = form.firstname.data
         lastName = form.lastname.data
         email = form.email.data
@@ -65,41 +68,23 @@ def new_user():
         password = hashed_password
         contact_number = form.contact.data
         new_user = User(username = username,
-                        communityID = communityId,
                         firstName = firstName,
                         lastName=lastName,
                         email = email,
                         password=password,
                         contact_number = contact_number)
+        if User.query.filter_by(username=username).first() is not None:
+            flash("Username already exists")
+            form = RegistrationForm()
+            return render_template('signup.html', form=form)
+        elif User.query.filter_by(email=email).first() is not None:
+            flash("Email already registered")
+            form = RegistrationForm()
+            return render_template('signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
         return '<h1>New user has been created</h1>'
     return render_template('signup.html', form=form)
-
-@app.route('/login', methods=['POST'])
-def authenticate():
-    username = request.json['username']
-    password = request.json['password']
-    if username is None or password is None:
-        # raise myexception.Unauthorized("Please enter username and password", 401)
-        return ("Please enter username and/or password")
-        # abort(400)  # missing arguments
-    elif User.query.filter_by(username=username).first() is not None:
-        verify_password(username,password)
-        if session['logged_in'] == True:
-            return ("Access Granted and logged in")
-
-@auth.verify_password
-def verify_password(username, password):
-    user = User.query.filter_by(username = username).first()
-    if not user or not user.verify_password(password):
-        # raise myexception.Unauthorized("Invalid username or password", 401)
-        return ("Invalid username or password")
-        # return False
-    g.user = user
-    session['logged_in'] = True
-    # raise myexception.Unauthorized("Access Granted and logged in", 200)
-    # return ("Access Granted and logged in")
 
 #add new post
 @app.route('/add_post', methods = ['POST'])
@@ -192,7 +177,6 @@ def login():
 def logout():
     logout_user()
     return redirect('index')
-
 
 def getListOfCommunities():
     communities = Community.query.all()
