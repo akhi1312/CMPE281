@@ -6,7 +6,7 @@ class Community(db.Model):
     __tablename__ = 'community'
     ID = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(60), index=True, unique=True)
-    description = name = db.Column(db.String(256), index=True)
+    description = db.Column(db.String(256), index=True)
     address = db.Column(db.String(128), index=True, unique=False)
     city = db.Column(db.String(15), index=True, unique=False)
     zip_code = db.Column(db.Integer, index=True, unique=False)
