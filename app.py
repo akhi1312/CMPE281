@@ -39,7 +39,7 @@ def load_user(username):
 def new_community():
     form = commuityRegistraion()
     if form.validate_on_submit():
-        name = form.name.data
+        name = form.name.data.lower()
         desc = form.desc.data
         address = form.address.data
         city = form.city.data
@@ -51,6 +51,10 @@ def new_community():
                         city=city,
                         zip_code=zip_code,
                         creation_date=creation_date)
+        if Community.query.filter_by(name=name).first() is not None:
+            flash("Community name already exists")
+            form = commuityRegistraion()
+            return render_template('newCommunity.html',form=form)
         db.session.add(com)
         db.session.commit()
         return '<h1>New Community is created</h1>'
@@ -60,9 +64,8 @@ def new_community():
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
     form = RegistrationForm()
-
     if form.validate_on_submit():
-        username = form.username.data
+        username = form.username.data.lower()
         firstName = form.firstname.data
         lastName = form.lastname.data
         email = form.email.data
@@ -75,11 +78,20 @@ def new_user():
                         email = email,
                         password=password,
                         contact_number = contact_number)
+        if User.query.filter_by(username=username).first() is not None:
+            flash("Username already exists")
+            form = RegistrationForm()
+            return render_template('signup.html', form=form)
+        elif User.query.filter_by(email=email).first() is not None:
+            flash("Email already registered")
+            form = RegistrationForm()
+            return render_template('signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
         return '<h1>New user has been created</h1>'
     return render_template('signup.html', form=form)
 
+<<<<<<< HEAD
 # @app.route('/login', methods=['POST'])
 # def authenticate():
 #     username = request.json['username']
@@ -105,6 +117,8 @@ def verify_password(username, password):
     # raise myexception.Unauthorized("Access Granted and logged in", 200)
     # return ("Access Granted and logged in")
 
+=======
+>>>>>>> 55617d7fb1131029d8da803fc53588797f5d53c9
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
@@ -196,7 +210,6 @@ def login():
 def logout():
     logout_user()
     return redirect('index')
-
 
 def getListOfCommunities():
     communities = Community.query.all()

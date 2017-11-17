@@ -29,3 +29,17 @@ class User(UserMixin, db.Model):
 
     def get_id(self):
         return unicode(self.username)
+
+class UserModerator(db.Model):
+    __tablename__ = 'user_moderator'
+    communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), primary_key=True)
+    moderator = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
+
+class UserCommunity(db.Model):
+    __tablename__ = 'user_community'
+    userID = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
+    communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), primary_key=True)
+
+class Admin(db.Model):
+    __tablename__ = 'admin'
+    admin = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
