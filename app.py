@@ -29,6 +29,11 @@ login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
 login_manager.login_view = 'login'
 
+@login_manager.user_loader
+def load_user(username):
+    print username
+    return User.query.get(username)
+
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
 def new_community():
@@ -75,18 +80,18 @@ def new_user():
         return '<h1>New user has been created</h1>'
     return render_template('signup.html', form=form)
 
-@app.route('/login', methods=['POST'])
-def authenticate():
-    username = request.json['username']
-    password = request.json['password']
-    if username is None or password is None:
-        # raise myexception.Unauthorized("Please enter username and password", 401)
-        return ("Please enter username and/or password")
-        # abort(400)  # missing arguments
-    elif User.query.filter_by(username=username).first() is not None:
-        verify_password(username,password)
-        if session['logged_in'] == True:
-            return ("Access Granted and logged in")
+# @app.route('/login', methods=['POST'])
+# def authenticate():
+#     username = request.json['username']
+#     password = request.json['password']
+#     if username is None or password is None:
+#         # raise myexception.Unauthorized("Please enter username and password", 401)
+#         return ("Please enter username and/or password")
+#         # abort(400)  # missing arguments
+#     elif User.query.filter_by(username=username).first() is not None:
+#         verify_password(username,password)
+#         if session['logged_in'] == True:
+#             return ("Access Granted and logged in")
 
 @auth.verify_password
 def verify_password(username, password):
@@ -182,7 +187,7 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user:
             if check_password_hash(user.password, form.password.data):
-                login_user(user, remember=form.remember.data)
+                login_user(user, remember=form.rememberMe.data)
                 return redirect(url_for('home'))
     return render_template('login.html',form=form)
 
