@@ -13,7 +13,7 @@ import os
 import sys
 import datetime
 from index import app, db, mongo,logger
-from models import Community, User
+from models import Community, User, UserCommunity, UserModerator
 import  myexception
 from flask_httpauth import HTTPBasicAuth
 
@@ -91,34 +91,6 @@ def new_user():
         return '<h1>New user has been created</h1>'
     return render_template('signup.html', form=form)
 
-<<<<<<< HEAD
-# @app.route('/login', methods=['POST'])
-# def authenticate():
-#     username = request.json['username']
-#     password = request.json['password']
-#     if username is None or password is None:
-#         # raise myexception.Unauthorized("Please enter username and password", 401)
-#         return ("Please enter username and/or password")
-#         # abort(400)  # missing arguments
-#     elif User.query.filter_by(username=username).first() is not None:
-#         verify_password(username,password)
-#         if session['logged_in'] == True:
-#             return ("Access Granted and logged in")
-
-@auth.verify_password
-def verify_password(username, password):
-    user = User.query.filter_by(username = username).first()
-    if not user or not user.verify_password(password):
-        # raise myexception.Unauthorized("Invalid username or password", 401)
-        return ("Invalid username or password")
-        # return False
-    g.user = user
-    session['logged_in'] = True
-    # raise myexception.Unauthorized("Access Granted and logged in", 200)
-    # return ("Access Granted and logged in")
-
-=======
->>>>>>> 55617d7fb1131029d8da803fc53588797f5d53c9
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
@@ -182,13 +154,6 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
-#get all the distict communities
-@app.route('/get_all_community', methods = ['GET'])
-def get_all_community():
-    communities = Community.query.all()
-    communities_name = [community.name for community in communities]
-    return json.dumps(communities_name)
-
 @app.route('/home')
 @login_required
 def home():
@@ -219,6 +184,33 @@ def getListOfCommunities():
 def getCommunityId(communityName):
     communityObj = Community.query.filter_by(name = communityName).first()
     return communityObj.ID
+
+#get users in a community
+@app.route('/get_community_users', methods = ['POST'])
+@login_required
+def getCommunityUsers():
+    communityName = request.json['communityName'].lower()
+    communityObj = Community.query.filter_by(name = communityName).first()
+    communityUsers = UserCommunity.query.filter_by(communityID=communityObj.ID)
+    users_list = []
+    for item in communityUsers.all():
+        users_list.append(item.userID)
+    return json.dumps(users_list)
+
+#get users in a community
+@app.route('/get_community_list', methods = ['GET'])
+@login_required
+def getCommunityList():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return json.dumps(communities_name)
+
+
+#post according to user
+#post acc. to community
+#message inbox user
+#message sent user
+
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
