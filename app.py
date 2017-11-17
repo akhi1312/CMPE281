@@ -16,6 +16,7 @@ from index import app, db, mongo,logger
 from models import Community, User
 import  myexception
 from flask_httpauth import HTTPBasicAuth
+from awsServices import send_email, sendMessage
 
 auth = HTTPBasicAuth()
 import pprint
@@ -91,34 +92,6 @@ def new_user():
         return '<h1>New user has been created</h1>'
     return render_template('signup.html', form=form)
 
-<<<<<<< HEAD
-# @app.route('/login', methods=['POST'])
-# def authenticate():
-#     username = request.json['username']
-#     password = request.json['password']
-#     if username is None or password is None:
-#         # raise myexception.Unauthorized("Please enter username and password", 401)
-#         return ("Please enter username and/or password")
-#         # abort(400)  # missing arguments
-#     elif User.query.filter_by(username=username).first() is not None:
-#         verify_password(username,password)
-#         if session['logged_in'] == True:
-#             return ("Access Granted and logged in")
-
-@auth.verify_password
-def verify_password(username, password):
-    user = User.query.filter_by(username = username).first()
-    if not user or not user.verify_password(password):
-        # raise myexception.Unauthorized("Invalid username or password", 401)
-        return ("Invalid username or password")
-        # return False
-    g.user = user
-    session['logged_in'] = True
-    # raise myexception.Unauthorized("Access Granted and logged in", 200)
-    # return ("Access Granted and logged in")
-
-=======
->>>>>>> 55617d7fb1131029d8da803fc53588797f5d53c9
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
