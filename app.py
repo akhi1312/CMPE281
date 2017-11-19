@@ -7,6 +7,7 @@ from index import app, db, mongo,logger
 from models import Community, User
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 import json
 import psycopg2
 import os
@@ -103,6 +104,36 @@ def new_user():
         return '<h1>New user has been created</h1>'
     return render_template('signup.html', form=form)
 
+<<<<<<< Updated upstream
+=======
+@app.route('/login', methods=['POST'])
+def authenticate():
+    username = request.json['username']
+    password = request.json['password']
+    if username is None or password is None:
+        # raise myexception.Unauthorized("Please enter username and password", 401)
+        return ("Please enter username and/or password")
+        # abort(400)  # missing arguments
+    elif User.query.filter_by(username=username).first() is not None:
+        verify_password(username,password)
+        if session['logged_in'] == True:
+            return ("Access Granted and logged in")
+
+@auth.verify_password
+def verify_password(username, password):
+    user = User.query.filter_by(username = username).first()
+    if not user or not user.verify_password(password):
+        # raise myexception.Unauthorized("Invalid username or password", 401)
+        return ("Invalid username or password")
+        # return False
+    g.user = user
+    session['logged_in'] = True
+    # raise myexception.Unauthorized("Access Granted and logged in", 200)
+    # return ("Access Granted and logged in")
+
+
+
+>>>>>>> Stashed changes
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
@@ -166,11 +197,38 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
+<<<<<<< Updated upstream
+=======
+#get all the distict communities
+@app.route('/get_all_community', methods = ['GET'])
+def get_all_community():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return json.dumps(communities_name)
+# Article Form Class
+class ArticleForm(Form):
+    title = StringField('Title', [validators.Length(min=1, max=200)])
+    body = TextAreaField('Body', [validators.Length(min=30)])
+
+
+>>>>>>> Stashed changes
 @app.route('/home')
-@login_required
+#@login_required
 def home():
+<<<<<<< Updated upstream
     # print (current_user.username)
     return render_template('userdashboard.html')
+=======
+    form = ArticleForm(request.form)
+    return render_template('userdashboard.html',form=form)
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html') 
+
+
+
+>>>>>>> Stashed changes
 
 @app.route('/login', methods=['GET','POST'])
 def login():
