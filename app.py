@@ -35,6 +35,14 @@ def load_user(username):
     # print username
     return User.query.get(username)
 
+
+#Test Route
+@app.route('/test', methods = ['GET','POST'])
+def test():
+    return render_template('newCommunity.html')
+
+
+
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
 @login_required
