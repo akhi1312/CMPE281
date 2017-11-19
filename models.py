@@ -11,6 +11,7 @@ class Community(db.Model):
     city = db.Column(db.String(15), index=True, unique=False)
     zip_code = db.Column(db.Integer, index=True, unique=False)
     creation_date = db.Column(db.DateTime, index=True, unique=False, default=False)
+    created_by = db.Column(db.String(128), db.ForeignKey('users.username'))
     status = db.Column(db.String(60), index=True, default="requested")
 
 class User(UserMixin, db.Model):
