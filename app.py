@@ -172,6 +172,8 @@ def login():
         if user:
             if check_password_hash(user.password, form.password.data):
                 login_user(user, remember=form.rememberMe.data)
+                session['loggedIn'] = True
+                session['username'] = user.username
                 return redirect(url_for('home'))
     return render_template('login.html',form=form)
 
@@ -179,7 +181,9 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect('index')
+    flash('You have successfully been logged out.')
+    session['loggedIn'] = False
+    return redirect(url_for('login'))
 
 def getListOfCommunities():
     communities = Community.query.all()
