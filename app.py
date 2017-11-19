@@ -32,11 +32,12 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(username):
-    print username
+    # print username
     return User.query.get(username)
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
+@login_required
 def new_community():
     form = commuityRegistraion()
     if form.validate_on_submit():
@@ -46,12 +47,14 @@ def new_community():
         city = form.city.data
         zip_code = form.zip_code.data
         creation_date = datetime.datetime.now()
+        created_by = current_user.username
         com = Community(name=name,
                         description=desc,
                         address=address,
                         city=city,
                         zip_code=zip_code,
-                        creation_date=creation_date)
+                        creation_date=creation_date,
+                        created_by = created_by)
         if Community.query.filter_by(name=name).first() is not None:
             flash("Community name already exists")
             form = commuityRegistraion()
@@ -158,6 +161,7 @@ def add_complaint():
 @app.route('/home')
 @login_required
 def home():
+    # print (current_user.username)
     return render_template('userdashboard.html')
 
 @app.route('/login', methods=['GET','POST'])
@@ -206,12 +210,53 @@ def getCommunityList():
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
+@app.route('/get_requested_community', methods = ['GET'])
+def getRequestedCommunity():
+    communityObj = Community.query.filter_by(status = 'requested').all()
+    communityList = []
+    for item in communityObj:
+        communityList.append(item.name)
+    return json.dumps(communityList)
+
+@app.route('/approve_community', methods = ['POST'])
+def approveCommunity():
+    communityName = request.json['name'].lower()
+    communityDetails = Community.query.filter_by(name = communityName).first()
+    communityID = communityDetails.ID
+    created_by = communityDetails.created_by
+    user_comm = UserCommunity(userID=created_by,
+                        communityID=communityID)
+    user_mod = UserModerator(communityID=communityID,
+    moderator=created_by)
+    communityDetails.status = 'Approved'
+    db.session.add(user_comm)
+    db.session.add(user_mod)
+    db.session.commit()
+    return '<h1>Community Approved</h1>'
+
+@app.route('/add_member', methods = ['POST'])
+def addCommunityMember():
+    userID = current_user.username
+    communityName = request.json['name']
+    communityID = Community.query.filter_by(name = communityName).first()
+    user_comm = UserCommunity(userID=userID,
+                        communityID=communityID)
+    db.session.add(user_comm)
+    db.session.commit()
+    return '<h1>Member Added</h1>'
+
+@app.route('/delete_community', methods = ['POST'])
+def deleteCommunity():
+    communityName = request.json['name']
+    communityID = Community.query.filter_by(name = communityName).first()
+    db.session.delete(communityID)
+    db.session.commit()
+
 
 #post according to user
 #post acc. to community
 #message inbox user
 #message sent user
-
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
