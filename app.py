@@ -121,7 +121,6 @@ def new_user():
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
-<<<<<<< HEAD
     print request.json
     # posts = mongo.posts
     # post_data = {
@@ -134,7 +133,6 @@ def add_post():
     # }
     # result = posts.insert_one(post_data)
     # return ('One post: {0}'.format(result.inserted_id))
-=======
     posts = mongo.posts
     post_data = {
         'category':request.json['category'].lower(),
