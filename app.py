@@ -138,6 +138,16 @@ def add_post(category,title,content):
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
 
+@app.route('/messages',methods=['GET'])
+def messages():
+    return render_template('messages.html')
+
+@app.route('/joincommunity',methods=['GET','POST'])
+def listOfCommunitites():
+    if request.method == 'POST':
+        print request.form['id']
+    return render_template('joincommunity.html')
+
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
 def add_post_comment():
@@ -191,7 +201,7 @@ def home():
     categories.append((len(categories),'General'))
     form = ArticleForm(categories)
     display_posts = getPostsByUser()
-    communities = get_all_community()
+    communities = getUserCommunities()
     print communities
     if form.validate_on_submit():
         title = form.title.data
