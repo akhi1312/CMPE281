@@ -142,11 +142,11 @@ def add_post(category,title,content):
 def messages():
     return render_template('messages.html')
 
-@app.route('/joincommunity',methods=['GET','POST'])
+@app.route('/joincommunity',methods=['GET'])
 def listOfCommunitites():
-    if request.method == 'POST':
-        print request.form['id']
-    return render_template('joincommunity.html')
+    joinedCommunities = getCommunityDetailsJoined()
+    unjoinedCommunities = getCommunityDetailsUnjoined()
+    return render_template('joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -295,13 +295,13 @@ def joinCommunity():
     userID = current_user.username
     # communityName = request.json['name']
     communityID = request.form['id']
-    # communityID = Community.query.filter_by(ID = communityName).first().ID
     # print (communityID.ID)
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
     db.session.add(user_comm)
     db.session.commit()
-    return '<h1>Member Added</h1>'
+    # return '<h1>Member Added</h1>'
+    return redirect(url_for('listOfCommunitites'))
 
 #api to get communities a user is member of
 # @app.route('/user_community', methods = ['GET'])
@@ -335,7 +335,8 @@ def getCommunityDetailsJoined():
     for i in range(0,len(moderators)):
         response[i]['moderator'] = moderators[i]
         response[i]['users'] = users[i]
-    return json.dumps(response)
+    # return json.dumps(response)
+    return response
     # print (communities)
 
 #api to get full community details for a unjoined user community
@@ -369,7 +370,8 @@ def getCommunityDetailsUnjoined():
     for i in range(0,len(moderators)):
         response[i]['moderator'] = moderators[i]
         response[i]['users'] = users[i]
-    return json.dumps(response)
+    # return json.dumps(response)
+    return response
 
 #api to delete a community
 @app.route('/delete_community', methods = ['POST'])

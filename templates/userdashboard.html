@@ -56,8 +56,7 @@ import render_field %}
     <div class="row" style="overflow: auto;">
     {%for post in posts %}
       <div class = "postsCard">
-        <span><img src="../static/images/avatar.png" alt="John" style="width:48px;height:48px;border-radius: 50%;"> {{post.author}}</span>
-        <h6>Posted: {{post.posted_date}}</h6>
+        <span><img src="../static/images/avatar.png" alt="John" style="width:48px;height:48px;border-radius: 50%;"> {{post.author}}<h6 class="pull-right">Posted: {{post.posted_date}}</h6> </span>
         <h5>{{post.category}}</h5>
         <h2>{{post.title}}</h2>
         <p>{{post.content}}</p>
