@@ -99,12 +99,14 @@ def new_user():
         hashed_password = generate_password_hash(form.password.data,method='sha256')
         password = hashed_password
         contact_number = form.contact.data
+        joining_date = datetime.datetime.now()
         new_user = User(username = username,
                         firstName = firstName,
                         lastName=lastName,
                         email = email,
                         password=password,
-                        contact_number = contact_number)
+                        contact_number = contact_number,
+                        joining_date=joining_date)
         if User.query.filter_by(username=username).first() is not None:
             flash("Username already exists")
             form = RegistrationForm()
@@ -132,7 +134,7 @@ def add_post(category,title,content):
     }
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
- 
+
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -329,10 +331,6 @@ def getPostsByUser():
         post['posted_date'] = str(post['posted_date'])
         post['_id'] = str(post['_id'])
     return response
-#post according to user
-#post acc. to community
-#message inbox user
-#message sent user
 
 @app.route('/get_stats', methods = ['GET'])
 def getStats():
@@ -359,7 +357,6 @@ def getListOfCommunities():
 def getCommunityId(communityName):
     communityObj = Community.query.filter_by(name = communityName).first()
     return communityObj.ID
-
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
