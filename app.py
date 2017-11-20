@@ -145,7 +145,7 @@ def add_post():
     }
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
->>>>>>> eb48717eea03054027d887de18e27c934fbdad87
+ 
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -202,13 +202,11 @@ def get_all_community():
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
-<<<<<<< HEAD
+ 
 
 
 @app.route('/home',methods = ['GET','POST'])
-=======
 @app.route('/home')
->>>>>>> eb48717eea03054027d887de18e27c934fbdad87
 @login_required
 def home():
     form = ArticleForm()
