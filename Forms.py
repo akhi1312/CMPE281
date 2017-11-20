@@ -1,5 +1,5 @@
 from flask_wtf import Form
-from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError
+from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError, TextAreaField
 from wtforms.validators import InputRequired, Email, Length, NumberRange
 
 
@@ -34,6 +34,11 @@ class commuityRegistraion(Form):
     address = StringField('Address:', validators=[InputRequired(), Length(min=4, max=50)])
     city = StringField('City:', validators=[InputRequired(), Length(max=30)])
     zip_code = IntegerField('ZipCode:', validators=[InputRequired()])
+
+# Post Form Class
+class ArticleForm(Form):
+    title = StringField('Title', validators=[InputRequired(),Length(min=1, max=25)])
+    body = TextAreaField('Body', validators=[InputRequired(),Length(max=256)])
 
 
 
