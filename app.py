@@ -99,12 +99,14 @@ def new_user():
         hashed_password = generate_password_hash(form.password.data,method='sha256')
         password = hashed_password
         contact_number = form.contact.data
+        joining_date = datetime.datetime.now()
         new_user = User(username = username,
                         firstName = firstName,
                         lastName=lastName,
                         email = email,
                         password=password,
-                        contact_number = contact_number)
+                        contact_number = contact_number,
+                        joining_date=joining_date)
         if User.query.filter_by(username=username).first() is not None:
             flash("Username already exists")
             form = RegistrationForm()
@@ -355,7 +357,6 @@ def getListOfCommunities():
 def getCommunityId(communityName):
     communityObj = Community.query.filter_by(name = communityName).first()
     return communityObj.ID
-
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
