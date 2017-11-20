@@ -36,13 +36,10 @@ def load_user(username):
     # print username
     return User.query.get(username)
 
-
 #Test Route
 @app.route('/test', methods = ['GET','POST'])
 def test():
     return render_template('newCommunity.html')
-
-
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
@@ -329,11 +326,23 @@ def getPostsByUser():
         post['posted_date'] = str(post['posted_date'])
         post['_id'] = str(post['_id'])
     return json.dumps(response)
-#post according to user
-#post acc. to community
-#message inbox user
-#message sent user
 
+@app.route('/get_stats', methods = ['GET'])
+def getStats():
+    communities = len(Community.query.all())
+    users = len(User.query.all())
+    post = mongo.posts
+    posts = post.find()
+    count = 0
+    for item in posts:
+        for doc in item:
+            count = count + 1
+    response = {
+    "users" : users,
+    "communities" : communities,
+    "posts" : count
+    }
+    return json.dumps(response)
 
 def getListOfCommunities():
     communities = Community.query.all()
@@ -343,6 +352,7 @@ def getListOfCommunities():
 def getCommunityId(communityName):
     communityObj = Community.query.filter_by(name = communityName).first()
     return communityObj.ID
+
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
