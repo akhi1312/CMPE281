@@ -156,12 +156,10 @@ def add_post_comment():
 def add_message():
     messages = mongo.messages
     message_data = {
-        'fromCommunityID': request.json['fromCommunityID'],
         'fromUserId':request.json['fromUserId'],
         'subject': request.json['subject'],
         'content': request.json['content'],
         'toUserId': request.json['toUserId'],
-        'toCommunityId': request.json['toCommunityId'],
         'message_date': datetime.datetime.now()
     }
     result = messages.insert_one(message_data)
@@ -278,7 +276,8 @@ def approveCommunity():
 def joinCommunity():
     userID = current_user.username
     communityName = request.json['name']
-    communityID = Community.query.filter_by(name = communityName).first()
+    communityID = Community.query.filter_by(name = communityName).first().ID
+    # print (communityID.ID)
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
     db.session.add(user_comm)
@@ -343,6 +342,30 @@ def getStats():
     "users" : users,
     "communities" : communities,
     "posts" : count
+    }
+    return json.dumps(response)
+
+#api to get the user messages
+@app.route('/get_user_messages', methods = ['GET'])
+@login_required
+def getMessageByUser():
+    userID = current_user.username
+    messages = mongo.messages
+    inbox = []
+    sent = []
+    inbox.extend(messages.find({ "toUserId": userID }))
+    sent.extend(messages.find({"fromUserId": userID}))
+    inbox.sort(key=lambda r: r['message_date'], reverse=True)
+    sent.sort(key=lambda r: r['message_date'], reverse=True)
+    for message in inbox:
+        message['message_date'] = str(message['message_date'])
+        message['_id'] = str(message['_id'])
+    for message in sent:
+        message['message_date'] = str(message['message_date'])
+        message['_id'] = str(message['_id'])
+    response = {
+    "inbox": inbox,
+    "sent": sent
     }
     return json.dumps(response)
 
