@@ -504,23 +504,25 @@ def getMessageByUser():
 
 @app.route('/community/<community_id>', methods=['GET', 'POST'])
 def community(community_id):
+    # print(community_id)
     communityObj = Community.query.filter_by(ID=community_id).first()
-    posts = posts.find({ "category": communityName })
-    moderator = UserModerator.query.filter_by(communityID=community_id)
-    communityDetails = {
-    "id" : communityObj.id,
-    "name" : communityObj.name,
-    "creation_date" : str(communityObj.creation_date).split(" ")[0]
-    }
-    users = []
-    userObj = UserCommunity.query.filter_by(communityID = id).all()
-    for user in userObj:
-        users.append(user.userID)
-    # return render_template('community.html', community_id=community_id, posts=posts)
+    # print (communityObj.name)
+    posts = mongo.posts
+    communityPosts = posts.find({ "category": communityObj.name })
+    # print (communityPosts)
+    postFinal = []
+    for post in communityPosts:
+        postFinal.append(post)
+    postFinal.sort(key=lambda r: r['posted_date'], reverse=True)
+    for post in postFinal:
+        post['posted_date'] = str(post['posted_date'])
+        post['_id'] = str(post['_id'])
+    moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
     response = {
-    "communityDetails" : communityDetails,
+    "name" : communityObj.name,
+    "posts" : postFinal,
     "moderator" : moderator,
-    "users" : users
+    "creation_date" : str(communityObj.creation_date).split(" ")[0]
     }
     return json.dumps(response)
 
