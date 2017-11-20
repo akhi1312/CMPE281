@@ -36,13 +36,27 @@ def load_user(username):
     # print username
     return User.query.get(username)
 
-
 #Test Route
 @app.route('/test', methods = ['GET','POST'])
 def test():
-    return render_template('newCommunity.html')
+    return render_template('admin.html')
 
 
+@app.route('/admin', methods = ['GET'])
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin_users', methods = ['GET','POST'])
+def admin_users():
+    return render_template('admin_users.html')
+
+@app.route('/admin_community', methods = ['GET','POST'])
+def admin_community():
+    return render_template('admin_community.html')
+
+@app.route('/admin_post', methods = ['GET','POST'])
+def admin_post():
+    return render_template('admin_post.html')
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
@@ -118,6 +132,7 @@ def add_post(category,title,content):
     }
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
+ 
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -319,6 +334,22 @@ def getPostsByUser():
 #message inbox user
 #message sent user
 
+@app.route('/get_stats', methods = ['GET'])
+def getStats():
+    communities = len(Community.query.all())
+    users = len(User.query.all())
+    post = mongo.posts
+    posts = post.find()
+    count = 0
+    for item in posts:
+        for doc in item:
+            count = count + 1
+    response = {
+    "users" : users,
+    "communities" : communities,
+    "posts" : count
+    }
+    return json.dumps(response)
 
 def getListOfCommunities():
     communities = Community.query.all()
@@ -328,6 +359,7 @@ def getListOfCommunities():
 def getCommunityId(communityName):
     communityObj = Community.query.filter_by(name = communityName).first()
     return communityObj.ID
+
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)

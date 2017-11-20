@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-/*Rahil Modi */
-
 body {
     background-size: cover;
     background-position: center;
@@ -12,7 +9,7 @@ body {
     margin-top:10px;
 }
 
-html, body, div, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
   margin: 0;
   padding: 0;
   border: 0;
@@ -28,82 +25,7 @@ html, body, div, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, 
   box-sizing: border-box;
 }
 
-/* Rahil Modi CSS ENDS */
-
-
-/* Navbar */
-.navbar{
-  min-height: 33px !important;
-  margin-bottom:0;
-  border-radius:0;
-}
-
-.navbar-nav > li > a, .navbar-brand{
-  padding-top:6px !important;
-  padding-bottom:0 !important;
-  height: 33px;
-}
-
-.navbar-default {
-  background-color: #e74c3c;
-  border-color: #c0392b;
-}
-.navbar-default .navbar-brand {
-  color: #ecf0f1;
-}
-.navbar-default .navbar-brand:hover,
-.navbar-default .navbar-brand:focus {
-  color: #ffbbbc;
-}
-.navbar-default .navbar-text {
-  color: #ecf0f1;
-}
-.navbar-default .navbar-nav > li > a {
-  color: #ecf0f1;
-}
-.navbar-default .navbar-nav > li > a:hover,
-.navbar-default .navbar-nav > li > a:focus {
-  color: #ffbbbc;
-}
-.navbar-default .navbar-nav > .active > a,
-.navbar-default .navbar-nav > .active > a:hover,
-.navbar-default .navbar-nav > .active > a:focus {
-  color: #ffbbbc;
-  background-color: #c0392b;
-}
-.navbar-default .navbar-nav > .open > a,
-.navbar-default .navbar-nav > .open > a:hover,
-.navbar-default .navbar-nav > .open > a:focus {
-  color: #ffbbbc;
-  background-color: #c0392b;
-}
-.navbar-default .navbar-toggle {
-  border-color: #c0392b;
-}
-.navbar-default .navbar-toggle:hover,
-.navbar-default .navbar-toggle:focus {
-  background-color: #c0392b;
-}
-.navbar-default .navbar-toggle .icon-bar {
-  background-color: #ecf0f1;
-}
-.navbar-default .navbar-collapse,
-.navbar-default .navbar-form {
-  border-color: #ecf0f1;
-}
-.navbar-default .navbar-link {
-  color: #ecf0f1;
-}
-.navbar-default .navbar-link:hover {
-  color: #ffbbbc;
-}
-
-/* Custom */
-.main-color-bg{
-  background-color: #e74c3c !important;
-  border-color: #c0392b !important;
-  color:#ffffff !important;
-}
+/*Added By AKhilesh*/
 
 /* Header */
 #header{
@@ -167,35 +89,17 @@ html, body, div, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, 
   }
 }
 
+/*Admin Portal CSS*/
 
 
-.jumbotron{
-    margin-top:10px;
-}
-
-html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  font-size: 100%;
-  font: inherit;
-  vertical-align: baseline;
-  outline: none;
-  -webkit-font-smoothing: antialiased;
-  -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-}
-/* html { overflow-y: scroll; } */
-/* body { 
+/*html { overflow-y: scroll; }*/
+body { 
   background: #f0f0f0; 
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   color: #313131;
   font-size: 62.5%; 
   line-height: 1; 
-} */
+}
 
 ::selection { background: #a4dcec; }
 ::-moz-selection { background: #a4dcec; }
@@ -220,7 +124,7 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 
 br { display: block; line-height: 2.2em; } 
 
-/* article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; } */
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
 ol, ul { list-style: none; }
 
 input, textarea { 
@@ -263,7 +167,7 @@ img { border: 0; max-width: 100%; }
 }
 
 /** typography **/
-/* h1 {
+h1 {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 2.5em;
   line-height: 1.5em;
@@ -321,7 +225,7 @@ p {
   line-height: 1.55em;
   margin-bottom: 22px;
   color: #555;
-} */
+}
 
 a { color: #5a9352; text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -449,7 +353,6 @@ a:hover { text-decoration: underline; }
   margin: auto;
   text-align: center;
   font-family: arial;
-  border:0;
 }
 
 .title {
@@ -470,11 +373,11 @@ button {
   font-size: 18px;
 }
 
-/* a {
+a {
   text-decoration: none;
   font-size: 22px;
   color: black;
-} */
+}
 
 button:hover, a:hover {
   opacity: 0.7;
@@ -488,4 +391,3 @@ button:hover, a:hover {
  
 html[xmlns] .clearfix { display: block; }
 * html .clearfix { height: 1%; }
->>>>>>> cb5c1eb871fd5bf95821917c135604fcf8b57dbf
