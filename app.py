@@ -293,8 +293,9 @@ def approveCommunity():
 @app.route('/join_community', methods = ['POST'])
 def joinCommunity():
     userID = current_user.username
-    communityName = request.json['name']
-    communityID = Community.query.filter_by(name = communityName).first().ID
+    # communityName = request.json['name']
+    communityID = request.form['id']
+    # communityID = Community.query.filter_by(ID = communityName).first().ID
     # print (communityID.ID)
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
@@ -326,6 +327,7 @@ def getCommunityDetailsJoined():
         moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
     for obj in communityObj:
         data = {
+        "id" : obj.ID,
         "name" : obj.name,
         "creation_date" : str(obj.creation_date).split(" ")[0],
                 }
@@ -359,6 +361,7 @@ def getCommunityDetailsUnjoined():
         moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
     for obj in communityObj:
         data = {
+        "id" : obj.ID,
         "name" : obj.name,
         "creation_date" : str(obj.creation_date).split(" ")[0],
                 }
