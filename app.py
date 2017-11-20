@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, make_response, url_for, flash
 
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm ,EditForm
 from index import app, db, mongo,logger
 from models import Community, User
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -30,6 +30,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
 login_manager.login_view = 'login'
+
+
 
 @login_manager.user_loader
 def load_user(username):
@@ -138,6 +140,7 @@ def add_post(category,title,content):
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
 
+
 @app.route('/messages',methods=['GET'])
 def messages():
     return render_template('messages.html')
@@ -147,6 +150,7 @@ def listOfCommunitites():
     joinedCommunities = getCommunityDetailsJoined()
     unjoinedCommunities = getCommunityDetailsUnjoined()
     return render_template('joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
+
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -194,15 +198,27 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
+
+#get all the distict communities
+@app.route('/get_all_community', methods = ['GET'])
+def get_all_community():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return json.dumps(communities_name)
+
+
+
+
 @app.route('/home',methods = ['GET','POST'])
 @login_required
 def home():
     categories = getUserCommunities()
-    categories.append((len(categories),'General'))
+    categories.append((0,'General'))
     form = ArticleForm(categories)
     display_posts = getPostsByUser()
     communities = getUserCommunities()
-    print communities
+    # print (communities)
+    # print communities
     if form.validate_on_submit():
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
@@ -214,9 +230,29 @@ def home():
         form.category.data = ""
     return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
 def profile():
-    return render_template('profile.html')
+    username = session['username']
+    user = User.query.filter_by(username=username).first()
+    form = EditForm(request.form)
+    if form.validate_on_submit():
+        print ("Inside User Updated")
+        user.email = form.email.data
+        user.contact_number = form.contact.data
+        user.firstName = form.firstname.data
+        user.lastName = form.lastname.data
+        db.session.commit()
+        print ("User Updated")
+        flash('Your changes have been saved.')
+        return redirect(url_for('profile'))
+    else:
+        form.email.data = user.email
+        form.contact.data = user.contact_number
+        form.firstname.data = user.firstName
+        form.lastname.data = user.lastName
+        print ("Inside else User Updated")
+    return render_template('profile.html', form=form)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -306,14 +342,30 @@ def joinCommunity():
     }
     return json.dumps(data)
 
+#api to join a community
+@app.route('/leave_community', methods = ['POST'])
+def leaveCommunity():
+    userID = current_user.username
+    communityID = request.form['id']
+    UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
+    db.session.commit()
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
+
 #api to get communities a user is member of
 # @app.route('/user_community', methods = ['GET'])
 def getUserCommunities():
     communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityNames = []
+    ids = []
     for item in communities:
         communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
-    return [(k,v) for k,v in enumerate(communityNames)]
+        ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
+    return [(k,v) for k,v in zip(ids, communityNames)]
+
+
 
 #api to get full community details for a joined user community
 @app.route('/user_joined_community', methods = ['GET'])

@@ -9,8 +9,9 @@
   
   <div id="w">
     <div id="content" class="clearfix">
-      <div id="userphoto"><img src="../static/images/avatar.png" alt="default avatar"></div>
-      <h1>Minimal User Profile Layout</h1>
+      <div id="userphoto"><img src="../static/images/avatar.png" alt="default avatar"  width="100px" height="100px"></div>
+      <span><h1>{{session.username}} </h1> </span>
+
 
       <nav id="profiletabs">
         <ul class="clearfix">
@@ -54,18 +55,40 @@
       </section>
       
       <section id="settings" class="hidden">
-        <p>Edit your user settings:</p>
+    
+ <h1>Edit Your Profile</h1>
+  <form action="/profile" method="POST" >
+      {{form.hidden_tag()}}
+      <table>
+          <tr>
+              <td> Email :</td>
+              <td>{{ form.email(size=24) }}</td>
+          </tr>
+          <tr>
+              <td>Contact :</td>
+              <td>{{ form.contact(cols=32, rows=4) }}</td>
+          </tr>
+             <tr>
+              <td>Firstname :</td>
+              <td>{{ form.firstname(cols=32, rows=4) }}</td>
+          </tr>
+             <tr>
+              <td>Lastname :</td>
+              <td>{{ form.lastname(cols=32, rows=4) }}</td>
+          </tr>
+          <tr>
+              <td><input type="submit" value="Save Changes"></td>
+          </tr>
+      </table>
+     
+  </form>
+
+
+
+
+
         
-        <p class="setting"><span>E-mail Address <img src="../static/images/edit.png" alt="*Edit*"></span> lolno@gmail.com</p>
-        
-        <p class="setting"><span>Language <img src="../static/images/edit.png" alt="*Edit*"></span> English(US)</p>
-        
-        <p class="setting"><span>Profile Status <img src="../static/images/edit.png" alt="*Edit*"></span> Public</p>
-        
-        <p class="setting"><span>Update Frequency <img src="../static/images/edit.png" alt="*Edit*"></span> Weekly</p>
-        
-        <p class="setting"><span>Connected Accounts <img src="../static/images/<edit class="png"></edit>" alt="*Edit*"></span> None</p>
-      </section>
+        </section>
     </div><!-- @end #content -->
   </div><!-- @end #w -->
 <script type="text/javascript">
