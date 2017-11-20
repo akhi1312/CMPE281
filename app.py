@@ -253,7 +253,7 @@ def getCommunityUsers():
 @app.route('/get_community_list', methods = ['GET'])
 @login_required
 def getCommunityList():
-    communities = Community.query.all()
+    communities = Community.query.filter_by(status = 'Approved').all()
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
