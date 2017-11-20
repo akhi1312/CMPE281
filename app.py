@@ -145,11 +145,11 @@ def add_post(category,title,content):
 def messages():
     return render_template('messages.html')
 
-@app.route('/joincommunity',methods=['GET','POST'])
+@app.route('/joincommunity',methods=['GET'])
 def listOfCommunitites():
-    if request.method == 'POST':
-        print request.form['id']
-    return render_template('joincommunity.html')
+    joinedCommunities = getCommunityDetailsJoined()
+    unjoinedCommunities = getCommunityDetailsUnjoined()
+    return render_template('joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
 
 
 #add comment to a post
@@ -271,7 +271,7 @@ def login():
         #     else:
         #         flash('password is incorrect')
         # else:
-        #     flash('User is not registered')    
+        #     flash('User is not registered')
     return render_template('login.html',form=form)
 
 @app.route('/logout')
@@ -332,14 +332,18 @@ def approveCommunity():
 @app.route('/join_community', methods = ['POST'])
 def joinCommunity():
     userID = current_user.username
-    communityName = request.json['name']
-    communityID = Community.query.filter_by(name = communityName).first().ID
+    # communityName = request.json['name']
+    communityID = request.form['id']
     # print (communityID.ID)
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
     db.session.add(user_comm)
     db.session.commit()
-    return '<h1>Member Added</h1>'
+    # return '<h1>Member Added</h1>'
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
 
 #api to get communities a user is member of
 # @app.route('/user_community', methods = ['GET'])
@@ -349,6 +353,67 @@ def getUserCommunities():
     for item in communities:
         communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
     return [(k,v) for k,v in enumerate(communityNames)]
+
+#api to get full community details for a joined user community
+@app.route('/user_joined_community', methods = ['GET'])
+def getCommunityDetailsJoined():
+    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communityObj = []
+    moderators = []
+    response = []
+    users = []
+    for community in communities:
+        x = UserCommunity.query.filter_by(communityID = community.communityID).all()
+        users.append(len(x))
+        communityObj.append(Community.query.filter_by(ID = community.communityID).first())
+        moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
+    for obj in communityObj:
+        data = {
+        "id" : obj.ID,
+        "name" : obj.name,
+        "creation_date" : str(obj.creation_date).split(" ")[0],
+                }
+        response.append(data)
+    for i in range(0,len(moderators)):
+        response[i]['moderator'] = moderators[i]
+        response[i]['users'] = users[i]
+    # return json.dumps(response)
+    return response
+    # print (communities)
+
+#api to get full community details for a unjoined user community
+@app.route('/user_unjoined_community', methods = ['GET'])
+def getCommunityDetailsUnjoined():
+    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    totalCommunities = Community.query.filter_by(status = 'Approved').all()
+    jid = set()
+    tid = set()
+    for community in communities:
+        jid.add(community.communityID)
+    for community in totalCommunities:
+        tid.add(community.ID)
+    unjoined =  tid - jid
+    moderators = []
+    response = []
+    communityObj = []
+    users = []
+    for id in unjoined:
+        x = UserCommunity.query.filter_by(communityID = id).all()
+        users.append(len(x))
+        communityObj.append(Community.query.filter_by(ID = id).first())
+        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+    for obj in communityObj:
+        data = {
+        "id" : obj.ID,
+        "name" : obj.name,
+        "creation_date" : str(obj.creation_date).split(" ")[0],
+                }
+        response.append(data)
+    for i in range(0,len(moderators)):
+        response[i]['moderator'] = moderators[i]
+        response[i]['users'] = users[i]
+    # return json.dumps(response)
+    return response
 
 #api to delete a community
 @app.route('/delete_community', methods = ['POST'])

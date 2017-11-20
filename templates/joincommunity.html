@@ -11,19 +11,23 @@
                         <tr>
                             <th>Name</th>
                             <th>Admin</th>
+                            <th>Number of Members</th>
                             <th>Created</th>
                             <th>Join Community</th>
                         </tr>
+                        {% for community in unjoined %}
                         <tr>
-                            <td>Home</td>
+                            <td>{{community.name}}</td>
                             <td>
-                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                                {{community.moderator}}
                             </td>
-                            <td>Dec 12, 2016</td>
+                            <td>{{community.users}}</td>
+                            <td>{{community.creation_date}}</td>
                             <td>
-                                <a data-id="Hello" class="btn btn-success" onclick="Join(this)">Join</a>
+                                <a data-id={{community.id}} class="btn btn-success" onclick="Join(this)">Join</a>
                             </td>
                         </tr>
+                        {% endfor %}
                     </table>
                 </div>
                 <hr/>
@@ -32,22 +36,26 @@
                 </div>
                 <div class="panel-body">
                     <table class="table table-striped table-hover" style="text-align: center">
-                        <tr>
-                            <th>Name</th>
-                            <th>Admin</th>
-                            <th>Created</th>
-                            <th>UnJoin Community</th>
-                        </tr>
-                        <tr >
-                            <td>Home</td>
-                            <td>
-                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                            </td>
-                            <td>Dec 12, 2016</td>
-                            <td>
-                                <a data-id="Hello" class="btn btn-danger" onclick="UnJoin(this)">Unjoin</a>
-                            </td>
-                        </tr>
+                            <tr>
+                                    <th>Name</th>
+                                    <th>Admin</th>
+                                    <th>Number of Members</th>
+                                    <th>Created</th>
+                                    <th>UnJoin Community</th>
+                                </tr>
+                                {% for community in joined %}
+                                <tr>
+                                    <td>{{community.name}}</td>
+                                    <td>
+                                        {{community.moderator}}
+                                    </td>
+                                    <td>{{community.users}}</td>
+                                    <td>{{community.creation_date}}</td>
+                                    <td>
+                                        <a data-id={{community.id}} class="btn btn-danger" onclick="UnJoin(this)">Unjoin</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                     </table>
                 </div>
             </div>
@@ -57,29 +65,35 @@
 </div>
 <script>
     function Join(elm) {
+        console.log($(elm).attr('data-id'))
         $.ajax({
-            url: '/joincommunity',
+            url: '/join_community',
             data: {
                 id: $(elm).attr('data-id')
             },
             type: 'POST',
             success: function (res) {
-                console.log(res);
+                var response = $.parseJSON(res)
+                if(response.status == 200)
+                    location.reload()
             },
             error: function (error) {
                 console.log(error);
             }
         });
-
+    }
         function UnJoin(elm) {
+            console.log($(elm).attr('data-id'))
             $.ajax({
-                url: '/joincommunity',
+                url: '/join_community',
                 data: {
                     id: $(elm).attr('data-id')
                 },
                 type: 'POST',
                 success: function (res) {
-                    console.log(res);
+                    var response = $.parseJSON(res)
+                    if(response.status == 200)
+                        location.reload()
                 },
                 error: function (error) {
                     console.log(error);
