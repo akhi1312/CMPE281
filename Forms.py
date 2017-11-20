@@ -19,6 +19,15 @@ class RegistrationForm(Form):
     contact = IntegerField('Contact:', validators=[InputRequired()])
     password = PasswordField('Password:',validators=[InputRequired(),Length(min=8, max=80)])
 
+
+class EditForm(Form):
+    """User Edit Form"""
+
+    email = StringField('Email:',validators=[InputRequired(),Email(message='Invalid email'),Length(max=50)])
+    firstname = StringField('Firstname:', validators=[InputRequired(), Length(min=4, max=30)])
+    lastname = StringField('Lastname:', validators=[InputRequired(), Length(min=4, max=30)])
+    contact = IntegerField('Contact:', validators=[InputRequired()])
+
     # def validateEmail(self,_email):
     #     if User.query.filter_by(email=_email).first():
     #         raise ValidationError('Email is already in use.')

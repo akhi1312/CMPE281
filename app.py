@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, make_response, url_for, flash
 
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm ,EditForm
 from index import app, db, mongo,logger
 from models import Community, User
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -30,6 +30,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
 login_manager.login_view = 'login'
+    
+
 
 @login_manager.user_loader
 def load_user(username):
@@ -227,9 +229,33 @@ def home():
         form.category.data = ""
     return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
 
-@app.route('/profile')
+
+
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
 def profile():
-    return render_template('profile.html')
+    username = session['username']
+    user = User.query.filter_by(username=username).first()
+    form = EditForm(request.form)
+    if form.validate_on_submit():
+        print ("Inside User Updated")
+        user.email = form.email.data
+        user.contact_number = form.contact.data
+        user.firstName = form.firstname.data
+        user.lastName = form.lastname.data
+        db.session.commit()
+        print ("User Updated")
+        flash('Your changes have been saved.')
+        return redirect(url_for('profile'))
+    else:
+        form.email.data = user.email 
+        form.contact.data = user.contact_number
+        form.firstname.data = user.firstName 
+        form.lastname.data = user.lastName
+        print ("Inside else User Updated")
+    return render_template('profile.html', form=form)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
