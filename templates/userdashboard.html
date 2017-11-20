@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %} 
+{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %}
 {% from "includes/_formhelpers.html"
 import render_field %}
 <div class="row" >
@@ -36,16 +36,16 @@ import render_field %}
           {{render_field(form.title, class="form-control")}}
       </div>
       <div class="row" >
-      <div class="col-md-10">  
+      <div class="col-md-10">
       <div class="form-group" >
           {{render_field(form.body, class="form-control")}}
       </div>
       </div>
-      <div class="col-md-2"> 
+      <div class="col-md-2">
           <div class="row d-flex justify-content-center">
                 {{wtf.form_field(form.category)}}
-          </div> 
-          <div class="row d-flex justify-content-center"> 
+          </div>
+          <div class="row d-flex justify-content-center">
               <button class = "btn btn-md btn-primary btn-block" style="width: 88%">Post</button>
           </div>
       </div>
