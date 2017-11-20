@@ -200,9 +200,6 @@ def home():
     categories = getUserCommunities()
     categories.append((len(categories),'General'))
     form = ArticleForm(categories)
-    display_posts = getPostsByUser()
-    communities = getUserCommunities()
-    print communities
     if form.validate_on_submit():
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
@@ -212,6 +209,8 @@ def home():
         form.title.data = ""
         form.body.data = ""
         form.category.data = ""
+    display_posts = getPostsByUser()
+    communities = getUserCommunities()
     return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
 
 @app.route('/profile')

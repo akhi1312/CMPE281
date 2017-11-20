@@ -41,7 +41,7 @@ class ArticleForm(Form):
         super(ArticleForm, self).__init__(*args, **kwargs)
         self.category.choices = categories
         
-    title = StringField('Title', validators=[InputRequired(),Length(min=1, max=25)])
+    title = StringField('Title', validators=[InputRequired(),Length(min=1, max=256)])
     body = TextAreaField('Content', validators=[InputRequired(),Length(max=256)])
     category = SelectField('Category:',coerce=int,validators=[InputRequired()])
 
