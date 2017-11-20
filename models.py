@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(128), index=True, unique=True)
     password = db.Column(db.String(256), index=True, unique=False)
     contact_number = db.Column(db.String(10), index=True, unique=False)
+    joining_date = db.Column(db.DateTime, index=True, unique=False, default=False)
 
     def hash_password(self, password):
         self.password = pwd_context.encrypt(password)

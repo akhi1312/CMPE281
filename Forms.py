@@ -37,12 +37,13 @@ class commuityRegistraion(Form):
 
 # Post Form Class
 class ArticleForm(Form):
+    def __init__(self, categories, *args,**kwargs):
+        super(ArticleForm, self).__init__(*args, **kwargs)
+        self.category.choices = categories
+        
     title = StringField('Title', validators=[InputRequired(),Length(min=1, max=25)])
-    body = TextAreaField('Body', validators=[InputRequired(),Length(max=256)])
-    language = SelectField(
-        'Category',
-        choices=[('cpp', 'C++'), ('py', 'Python'), ('text', 'Plain Text')]
-    )
+    body = TextAreaField('Content', validators=[InputRequired(),Length(max=256)])
+    category = SelectField('Category:',coerce=int,validators=[InputRequired()])
 
 
 

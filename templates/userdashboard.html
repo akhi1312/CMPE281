@@ -1,42 +1,74 @@
-{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %} {% from "includes/_formhelpers.html"
+{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %} 
+{% from "includes/_formhelpers.html"
 import render_field %}
-<div class=row>
-  <div class="col-md-2">
-    <br/>
+<div class="row" >
+  <div class="col-md-3 sidebar-nav-fixed d-flex justify-content-center">
+  <div class="affix">
     <div class="card">
       <img src="../static/images/avatar.png" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
       <h3>{{session.username}}</h3>
       <p class="title">CEO & Founder, Example</p>
     </div>
-
+    <br/>
+    <div style="text-align:center">
+        <a class="btn btn-primary" href="/joincommunity">Join / Unjoin</a>
+        <a class="btn btn-success" href="/new_community">Create</a>
+    </div>
+    <hr/>
+    <div class="communityboxcard">
+      <ul>
+        List of Joined Communities:
+        <hr/>
+        {% for community in communities%}
+        <div class="CommunityNameCard">
+          <li><a href="#">{{community[1]}}</a></li>
+        </div>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
+  </div>
+
   <div class="col-md-8">
-    <form method="POST" action="/home">
-      <br>
+    <form method="POST" action="/home" style="border: 1px solid black; padding:5px 10px; margin:5px 0px;overflow:hidden;">
       <div class="form-group">
           {{form.hidden_tag()}}
           {{render_field(form.title, class="form-control")}}
       </div>
-      <div class="row">
+      <div class="row" >
       <div class="col-md-10">  
       <div class="form-group" >
-          {{render_field(form.body, class="form-control", id="editor")}}
+          {{render_field(form.body, class="form-control")}}
       </div>
       </div>
       <div class="col-md-2"> 
-          <div class="row">
-            <div class="form-group">
-                {{wtf.form_field(form.language)}}
-            </div>
+          <div class="row d-flex justify-content-center">
+                {{wtf.form_field(form.category)}}
           </div> 
-          <div class="row"> 
-              <button class = "btn btn-md btn-primary btn-block" style="width: 90%">Submit</button>
+          <div class="row d-flex justify-content-center"> 
+              <button class = "btn btn-md btn-primary btn-block" style="width: 88%">Post</button>
           </div>
       </div>
       </div>
     </form>
+    <hr/>
+    <div>
+    <div class="row" style="overflow: auto;">
+    {%for post in posts %}
+      <div class = "postsCard">
+        <span><img src="../static/images/avatar.png" alt="John" style="width:48px;height:48px;border-radius: 50%;"> {{post.author}}</span>
+        <h6>Posted: {{post.posted_date}}</h6> 
+        <h5>{{post.category}}</h5>
+        <h2>{{post.title}}</h2>
+        <p>{{post.content}}</p>
+      </div>
+    {% endfor %}
+  </div>
+  </div>
   </div>
 
 </div>
+
+
 
 {% endblock %}

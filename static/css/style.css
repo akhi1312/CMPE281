@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 /*Rahil Modi */
-
 body {
     background-size: cover;
     background-position: center;
@@ -10,6 +8,9 @@ body {
 
 .jumbotron{
     margin-top:10px;
+}
+#pageContent{
+  padding-top: 60px;
 }
 
 html, body, div, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
@@ -175,7 +176,7 @@ html, body, div, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, 
 
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
   margin: 0;
-  padding: 0;
+  /* padding: 0; */
   border: 0;
   font-size: 100%;
   font: inherit;
@@ -444,12 +445,50 @@ a:hover { text-decoration: underline; }
   border: 1px solid #c9d8b8;
 }
 .card {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px 0 rgba(194, 53, 53, 0.2);
   max-width: 300px;
   margin: auto;
   text-align: center;
   font-family: arial;
-  border:0;
+  border:1px black solid;
+  padding:5px 0 0 0 ;
+}
+
+.communityboxcard {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  margin:auto;
+  text-align: center;
+  font-family: arial;
+}
+.CommunityNameCard {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 1);
+  max-width: 300px;
+  margin: 0;
+  text-align: center;
+  font-family: arial;
+  padding:5px 0 ;
+}
+
+.CommunityNameCard:hover{
+  background: rgba(100,0,0,0.2)
+}
+
+.postsCard {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  width:100%;
+  font-family: arial;
+  margin: 5px 0;
+  padding: 5px 5px 0 5px;
+  border: 1px black solid;
+}
+
+.postsCard:hover{
+  background: rgba(0,0,0,0.2)
+}
+
+.box-community{
+  border: 1px black solid;
 }
 
 .title {
