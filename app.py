@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, make_response, url_for, flash
 
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-from Forms import LoginForm, RegistrationForm, commuityRegistraion
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm
 from index import app, db, mongo,logger
 from models import Community, User
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 import json
 import psycopg2
 import os
@@ -16,6 +17,7 @@ from index import app, db, mongo,logger
 from models import Community, User, UserCommunity, UserModerator
 import  myexception
 from flask_httpauth import HTTPBasicAuth
+from awsServices import send_email, sendMessage
 
 auth = HTTPBasicAuth()
 import pprint
@@ -31,11 +33,17 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(username):
-    print username
+    # print username
     return User.query.get(username)
+
+#Test Route
+@app.route('/test', methods = ['GET','POST'])
+def test():
+    return render_template('newCommunity.html')
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
+@login_required
 def new_community():
     form = commuityRegistraion()
     if form.validate_on_submit():
@@ -45,12 +53,14 @@ def new_community():
         city = form.city.data
         zip_code = form.zip_code.data
         creation_date = datetime.datetime.now()
+        created_by = current_user.username
         com = Community(name=name,
                         description=desc,
                         address=address,
                         city=city,
                         zip_code=zip_code,
-                        creation_date=creation_date)
+                        creation_date=creation_date,
+                        created_by = created_by)
         if Community.query.filter_by(name=name).first() is not None:
             flash("Community name already exists")
             form = commuityRegistraion()
@@ -96,9 +106,10 @@ def new_user():
 def add_post():
     posts = mongo.posts
     post_data = {
+        'category':request.json['category'].lower(),
         'title': request.json['title'],
         'content': request.json['content'],
-        'author': request.json['author'],
+        'author': current_user.username,
         'attachment': request.json['attachment'],
         'posted_date': datetime.datetime.now(),
         'comments': []
@@ -154,10 +165,22 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
+#get all the distict communities
+@app.route('/get_all_community', methods = ['GET'])
+def get_all_community():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return json.dumps(communities_name)
+
 @app.route('/home')
 @login_required
 def home():
-    return render_template('userdashboard.html')
+    form = ArticleForm()
+    return render_template('userdashboard.html',form=form)
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -167,6 +190,8 @@ def login():
         if user:
             if check_password_hash(user.password, form.password.data):
                 login_user(user, remember=form.rememberMe.data)
+                session['loggedIn'] = True
+                session['username'] = user.username
                 return redirect(url_for('home'))
     return render_template('login.html',form=form)
 
@@ -174,16 +199,9 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect('index')
-
-def getListOfCommunities():
-    communities = Community.query.all()
-    communities_name = [community.name for community in communities]
-    return [(k,v) for k,v in enumerate(communities_name)]
-
-def getCommunityId(communityName):
-    communityObj = Community.query.filter_by(name = communityName).first()
-    return communityObj.ID
+    flash('You have successfully been logged out.')
+    session['loggedIn'] = False
+    return redirect(url_for('login'))
 
 #get users in a community
 @app.route('/get_community_users', methods = ['POST'])
@@ -205,11 +223,106 @@ def getCommunityList():
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
+@app.route('/get_requested_community', methods = ['GET'])
+def getRequestedCommunity():
+    communityObj = Community.query.filter_by(status = 'requested').all()
+    communityList = []
+    for item in communityObj:
+        communityList.append(item.name)
+    return json.dumps(communityList)
 
-#post according to user
-#post acc. to community
-#message inbox user
-#message sent user
+@app.route('/approve_community', methods = ['POST'])
+def approveCommunity():
+    communityName = request.json['name'].lower()
+    communityDetails = Community.query.filter_by(name = communityName).first()
+    communityID = communityDetails.ID
+    created_by = communityDetails.created_by
+    user_comm = UserCommunity(userID=created_by,
+                        communityID=communityID)
+    user_mod = UserModerator(communityID=communityID,
+    moderator=created_by)
+    communityDetails.status = 'Approved'
+    db.session.add(user_comm)
+    db.session.add(user_mod)
+    db.session.commit()
+    return '<h1>Community Approved</h1>'
+
+@app.route('/add_member', methods = ['POST'])
+def addCommunityMember():
+    userID = current_user.username
+    communityName = request.json['name']
+    communityID = Community.query.filter_by(name = communityName).first()
+    user_comm = UserCommunity(userID=userID,
+                        communityID=communityID)
+    db.session.add(user_comm)
+    db.session.commit()
+    return '<h1>Member Added</h1>'
+
+@app.route('/user_community', methods = ['GET'])
+def getUserCommunities():
+    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communityNames = []
+    for item in communities:
+        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+    return json.dumps([(k,v) for k,v in enumerate(communityNames)])
+
+@app.route('/delete_community', methods = ['POST'])
+def deleteCommunity():
+    communityName = request.json['name']
+    communityID = Community.query.filter_by(name = communityName).first()
+    db.session.delete(communityID)
+    db.session.commit()
+
+@app.route('/get_user_posts', methods = ['GET'])
+def getPostsByUser():
+    userID = current_user.username
+    communities = UserCommunity.query.filter_by(userID=userID).all()
+    posts = mongo.posts
+    generalPosts = []
+    communityPosts = []
+    communityNames = []
+    response = []
+    for item in communities:
+        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+    for name in communityNames:
+        communityPosts.extend(posts.find({ "category": name }))
+    for post in communityPosts:
+        response.append(post)
+    generalPosts.append(posts.find({ "category": "general" }))
+    for item in generalPosts:
+        for doc in item:
+            response.append(doc)
+    response.sort(key=lambda r: r['posted_date'], reverse=True)
+    for post in response:
+        post['posted_date'] = str(post['posted_date'])
+        post['_id'] = str(post['_id'])
+    return json.dumps(response)
+
+@app.route('/get_stats', methods = ['GET'])
+def getStats():
+    communities = len(Community.query.all())
+    users = len(User.query.all())
+    post = mongo.posts
+    posts = post.find()
+    count = 0
+    for item in posts:
+        for doc in item:
+            count = count + 1
+    response = {
+    "users" : users,
+    "communities" : communities,
+    "posts" : count
+    }
+    return json.dumps(response)
+
+def getListOfCommunities():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return [(k,v) for k,v in enumerate(communities_name)]
+
+def getCommunityId(communityName):
+    communityObj = Community.query.filter_by(name = communityName).first()
+    return communityObj.ID
 
 
 if __name__ == '__main__':

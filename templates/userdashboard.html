@@ -1,31 +1,54 @@
 {% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
 {% block page_content %}
-    <div class="row">
-        <div class="col-md-9">
-            <div class="row">
-                <form style="width:100%" method="POST" action="add_post">
-                    <input required type="text" class="form-control" placeholder="Title"/>
-                    <br/>
-                    <div class="row">
-                        <div class="col-md-10">
-                            <textarea required class="form-control" maxlength="200" rows="3" placeholder="Description" ></textarea>
-                        </div>
-                        <div class="col-md-1"></div>
-                        <div class="col-md-1 align-self-center">
-                            <input class="btn btn-lg submit-btn pull-right inline" type="submit" value="Post!" />
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <!--{% for post in posts %}-->
-            <!--<div class="row">-->
-                <!--<h2>{{post.title}}</h2>-->
-                <!--<p>{{post.content}}</p>-->
-            <!--</div>-->
-            <!--{% endfor %}-->
-        </div>
-        <div class="col-md-3">
-            <h2>Hello</h2>
-        </div>
+  {% from "includes/_formhelpers.html" import render_field %}
+  <div class=row>
+  <div class="col-xs-6 col-md-2">
+
+<br>
+<h6 style="text-align:center">User Profile Card</h6>
+
+<div class="card">
+  <img src="../static/images/avatar.png" alt="John" style="width:100%">
+  <h1>John Doe</h1>
+  <p class="title">CEO & Founder, Example</p>
+  <p>Harvard University</p>
+  <div style="margin: 24px 0;">
+    <a href="#"><i class="fa fa-dribbble"></i></a> 
+    <a href="#"><i class="fa fa-twitter"></i></a>  
+    <a href="#"><i class="fa fa-linkedin"></i></a>  
+    <a href="#"><i class="fa fa-facebook"></i></a> 
+ </div>
+ <p><button>Contact</button></p>
+</div>
+
+
+
+
+  </div>
+  <div class="col-xs-6 col-md-8">
+  
+    <form method="POST" action="">
+        <br>
+     <div class="form-group" >
+     <input type ="text" class ="form-control" id = "title" placeholder="Enter Title">
     </div>
+   <div class="form-group" >
+    <input type ="text" class ="form-control" id = "editor" placeholder="Enter the Post">
+  </div>
+
+      <p><input class="btn btn-primary" type="submit" value="Submit"></p>
+    </form>
+
+    
+  </div>
+
+
+    <div class="col-xs-6 col-md-2">.col-xs-6 .col-md-4</div>
+    
+</div>
+
 {% endblock %}
+
+

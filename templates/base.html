@@ -11,6 +11,26 @@
     <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+   
+    <!-- Akhilesh Code -->
+
+  <link rel="shortcut icon" href="http://designshack.net/favicon.ico">
+  <link rel="icon" href="http://designshack.net/favicon.ico">
+  <link rel="stylesheet" type="text/css" media="all" href="../static/css/styles.css">
+  <script type="text/javascript" src="../static/js/jquery-1.10.2.min.js"></script>
+
+   <!-- End -->
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+
+</style>
+
+
+
+
+
 </head>
 <body>
     <!-- Navbar -->
@@ -40,18 +60,27 @@
                 </li>
                 </ul>
                 <ul class="navbar-nav navbar-right">
+                {%if not session.loggedIn %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{url_for('new_user')}}">Sign Up <i class="fa fa-user-plus" aria-hidden="true"></i></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{url_for('login')}}">Login <i class="fa fa-user" aria-hidden="true"></i></a>
                 </li>
+                {%else%}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('login')}}">Welocme {{session.username}}</a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{url_for('logout')}}">Logout</a>
+                </li>
+                {%endif%}
                 </ul>
             </div>
         </div>
     </nav>
     {% block content %}
-    <div class="container">
+    <div class="container-fluid">
         {% for message in get_flashed_messages() %}
         <div class="alert alert-warning">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -99,5 +128,9 @@
     </div>
   </div>
 </div>
+<script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
+    <script type="text/javascript">
+      CKEDITOR.replace('editor')
+    </script>
 </body>
 </html>
