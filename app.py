@@ -135,7 +135,6 @@ def add_post(category,title,content):
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
 
-
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
 def add_post_comment():
@@ -183,15 +182,6 @@ def add_complaint():
     }
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
-
-#get all the distict communities
-@app.route('/get_all_community', methods = ['GET'])
-def get_all_community():
-    communities = Community.query.all()
-    communities_name = [community.name for community in communities]
-    return json.dumps(communities_name)
-
-
 
 @app.route('/home',methods = ['GET','POST'])
 @login_required
@@ -249,7 +239,7 @@ def getCommunityUsers():
         users_list.append(item.userID)
     return json.dumps(users_list)
 
-#get users in a community
+#get list of approved communities
 @app.route('/get_community_list', methods = ['GET'])
 @login_required
 def getCommunityList():
@@ -257,6 +247,7 @@ def getCommunityList():
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
+#get list of requested communitites
 @app.route('/get_requested_community', methods = ['GET'])
 def getRequestedCommunity():
     communityObj = Community.query.filter_by(status = 'requested').all()
@@ -265,6 +256,7 @@ def getRequestedCommunity():
         communityList.append(item.name)
     return json.dumps(communityList)
 
+#api to approve a requested community
 @app.route('/approve_community', methods = ['POST'])
 def approveCommunity():
     communityName = request.json['name'].lower()
@@ -281,8 +273,9 @@ def approveCommunity():
     db.session.commit()
     return '<h1>Community Approved</h1>'
 
-@app.route('/add_member', methods = ['POST'])
-def addCommunityMember():
+#api to join a community
+@app.route('/join_community', methods = ['POST'])
+def joinCommunity():
     userID = current_user.username
     communityName = request.json['name']
     communityID = Community.query.filter_by(name = communityName).first()
@@ -292,6 +285,7 @@ def addCommunityMember():
     db.session.commit()
     return '<h1>Member Added</h1>'
 
+#api to get communities a user is member of
 # @app.route('/user_community', methods = ['GET'])
 def getUserCommunities():
     communities = UserCommunity.query.filter_by(userID=current_user.username).all()
@@ -300,6 +294,7 @@ def getUserCommunities():
         communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
     return [(k,v) for k,v in enumerate(communityNames)]
 
+#api to delete a community
 @app.route('/delete_community', methods = ['POST'])
 def deleteCommunity():
     communityName = request.json['name']
@@ -307,6 +302,7 @@ def deleteCommunity():
     db.session.delete(communityID)
     db.session.commit()
 
+#api to get posts filter by user
 @app.route('/get_user_posts', methods = ['GET'])
 def getPostsByUser():
     userID = current_user.username
@@ -332,6 +328,7 @@ def getPostsByUser():
         post['_id'] = str(post['_id'])
     return response
 
+#api to get the statistics
 @app.route('/get_stats', methods = ['GET'])
 def getStats():
     communities = len(Community.query.all())
@@ -349,14 +346,14 @@ def getStats():
     }
     return json.dumps(response)
 
-def getListOfCommunities():
-    communities = Community.query.all()
-    communities_name = [community.name for community in communities]
-    return [(k,v) for k,v in enumerate(communities_name)]
-
-def getCommunityId(communityName):
-    communityObj = Community.query.filter_by(name = communityName).first()
-    return communityObj.ID
+# def getListOfCommunities():
+#     communities = Community.query.all()
+#     communities_name = [community.name for community in communities]
+#     return [(k,v) for k,v in enumerate(communities_name)]
+#
+# def getCommunityId(communityName):
+#     communityObj = Community.query.filter_by(name = communityName).first()
+#     return communityObj.ID
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
