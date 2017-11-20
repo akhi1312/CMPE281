@@ -18,13 +18,13 @@
 
   <link rel="shortcut icon" href="http://designshack.net/favicon.ico">
   <link rel="icon" href="http://designshack.net/favicon.ico">
-  <script type="text/javascript" src="../static/js/jquery-1.10.2.min.js"></script>
+  <!-- <script type="text/javascript" src="../static/js/jquery-1.10.2.min.js"></script> -->
 
       <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="../static/js/bootstrap.min.js"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>-->
+     <script src="../static/js/bootstrap.min.js"></script> 
 
    <!-- End -->
 
@@ -76,7 +76,7 @@
                 </li>
                 {%else%}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{url_for('login')}}">Welcome {{session.username}}</a>
+                    <a class="nav-link" href="{{url_for('profile')}}">Welcome {{session.username}}</a>
                 </li>
                 <li>
                     <a class="nav-link" href="{{url_for('logout')}}">Logout</a>
@@ -135,9 +135,9 @@
     </div>
   </div>
 </div>
-<script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
+<!-- <script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
     <script type="text/javascript">
       CKEDITOR.replace('editor')
-    </script>
+    </script> -->
 </body>
 </html>

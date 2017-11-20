@@ -41,6 +41,9 @@ def load_user(username):
 def test():
     return render_template('admin.html')
 
+@app.route('/',methods = ['GET'])
+def index():
+    return render_template('index.html')
 
 @app.route('/admin', methods = ['GET'])
 def admin():
@@ -198,7 +201,8 @@ def home():
     categories.append((len(categories),'General'))
     form = ArticleForm(categories)
     display_posts = getPostsByUser()
-    print display_posts
+    communities = get_all_community()
+    print communities
     if form.validate_on_submit():
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
@@ -208,7 +212,7 @@ def home():
         form.title.data = ""
         form.body.data = ""
         form.category.data = ""
-    return render_template('userdashboard.html',form=form, posts = display_posts)
+    return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
 
 @app.route('/profile')
 def profile():
@@ -225,6 +229,10 @@ def login():
                 session['loggedIn'] = True
                 session['username'] = user.username
                 return redirect(url_for('home'))
+        #     else:
+        #         flash('password is incorrect')
+        # else:
+        #     flash('User is not registered')    
     return render_template('login.html',form=form)
 
 @app.route('/logout')
