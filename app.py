@@ -301,7 +301,10 @@ def joinCommunity():
     db.session.add(user_comm)
     db.session.commit()
     # return '<h1>Member Added</h1>'
-    return redirect(url_for('listOfCommunitites'))
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
 
 #api to get communities a user is member of
 # @app.route('/user_community', methods = ['GET'])
