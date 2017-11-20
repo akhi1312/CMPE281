@@ -2,4 +2,5 @@
 *.pyc
 .vscode
 cmpe281/
+.DS_Store
 *.log
