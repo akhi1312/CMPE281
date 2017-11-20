@@ -188,7 +188,7 @@ def home():
     categories.append((len(categories),'General'))
     form = ArticleForm(categories)
     display_posts = getPostsByUser()
-    print display_posts
+    # print display_posts
     if form.validate_on_submit():
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
@@ -292,6 +292,63 @@ def getUserCommunities():
     for item in communities:
         communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
     return [(k,v) for k,v in enumerate(communityNames)]
+
+#api to get full community details for a joined user community
+@app.route('/user_joined_community', methods = ['GET'])
+def getCommunityDetailsJoined():
+    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communityObj = []
+    moderators = []
+    response = []
+    users = []
+    for community in communities:
+        x = UserCommunity.query.filter_by(communityID = community.communityID).all()
+        users.append(len(x))
+        communityObj.append(Community.query.filter_by(ID = community.communityID).first())
+        moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
+    for obj in communityObj:
+        data = {
+        "name" : obj.name,
+        "creation_date" : str(obj.creation_date).split(" ")[0],
+                }
+        response.append(data)
+    for i in range(0,len(moderators)):
+        response[i]['moderator'] = moderators[i]
+        response[i]['users'] = users[i]
+    return json.dumps(response)
+    # print (communities)
+
+#api to get full community details for a unjoined user community
+@app.route('/user_unjoined_community', methods = ['GET'])
+def getCommunityDetailsUnjoined():
+    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    totalCommunities = Community.query.filter_by(status = 'Approved').all()
+    jid = set()
+    tid = set()
+    for community in communities:
+        jid.add(community.communityID)
+    for community in totalCommunities:
+        tid.add(community.ID)
+    unjoined =  tid - jid
+    moderators = []
+    response = []
+    communityObj = []
+    users = []
+    for id in unjoined:
+        x = UserCommunity.query.filter_by(communityID = id).all()
+        users.append(len(x))
+        communityObj.append(Community.query.filter_by(ID = id).first())
+        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+    for obj in communityObj:
+        data = {
+        "name" : obj.name,
+        "creation_date" : str(obj.creation_date).split(" ")[0],
+                }
+        response.append(data)
+    for i in range(0,len(moderators)):
+        response[i]['moderator'] = moderators[i]
+        response[i]['users'] = users[i]
+    return json.dumps(response)
 
 #api to delete a community
 @app.route('/delete_community', methods = ['POST'])
