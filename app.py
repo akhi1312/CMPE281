@@ -365,8 +365,6 @@ def getUserCommunities():
         ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
     return [(k,v) for k,v in zip(ids, communityNames)]
 
-
-
 #api to get full community details for a joined user community
 @app.route('/user_joined_community', methods = ['GET'])
 def getCommunityDetailsJoined():
@@ -501,6 +499,28 @@ def getMessageByUser():
     response = {
     "inbox": inbox,
     "sent": sent
+    }
+    return json.dumps(response)
+
+@app.route('/community/<community_id>', methods=['GET', 'POST'])
+def community(community_id):
+    communityObj = Community.query.filter_by(ID=community_id).first()
+    posts = posts.find({ "category": communityName })
+    moderator = UserModerator.query.filter_by(communityID=community_id)
+    communityDetails = {
+    "id" : communityObj.id,
+    "name" : communityObj.name,
+    "creation_date" : str(communityObj.creation_date).split(" ")[0]
+    }
+    users = []
+    userObj = UserCommunity.query.filter_by(communityID = id).all()
+    for user in userObj:
+        users.append(user.userID)
+    # return render_template('community.html', community_id=community_id, posts=posts)
+    response = {
+    "communityDetails" : communityDetails,
+    "moderator" : moderator,
+    "users" : users
     }
     return json.dumps(response)
 
