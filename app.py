@@ -119,32 +119,20 @@ def new_user():
     return render_template('signup.html', form=form)
 
 #add new post
-@app.route('/add_post', methods = ['POST'])
-def add_post():
-    print request.json
-    # posts = mongo.posts
-    # post_data = {
-    #     'title': request.json['title'],
-    #     'content': request.json['content'],
-    #     'author': request.json['author'],
-    #     'attachment': request.json['attachment'],
-    #     'posted_date': datetime.datetime.now(),
-    #     'comments': []
-    # }
-    # result = posts.insert_one(post_data)
-    # return ('One post: {0}'.format(result.inserted_id))
+# @app.route('/add_post', methods = ['POST'])
+def add_post(category,title,content):
     posts = mongo.posts
     post_data = {
-        'category':request.json['category'].lower(),
-        'title': request.json['title'],
-        'content': request.json['content'],
+        'category':category.lower(),
+        'title': title,
+        'content': content,
         'author': current_user.username,
-        'attachment': request.json['attachment'],
         'posted_date': datetime.datetime.now(),
         'comments': []
     }
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
+
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -201,19 +189,26 @@ def get_all_community():
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
+
+
 @app.route('/home',methods = ['GET','POST'])
 @login_required
 def home():
-    form = ArticleForm()
+    categories = getUserCommunities()
+    categories.append((len(categories),'General'))
+    form = ArticleForm(categories)
+    display_posts = getPostsByUser()
+    print display_posts
     if form.validate_on_submit():
-        print 'hiiiii'
         title = form.title.data
+        # body = form.body.data.split('<p>')[1].split('</p>')[0]
         body = form.body.data
-        language = form.language.data
-        print title
-        print body
-        print language
-    return render_template('userdashboard.html',form=form)
+        category = dict(categories).get(form.category.data)
+        add_post(category,title,body)
+        form.title.data = ""
+        form.body.data = ""
+        form.category.data = ""
+    return render_template('userdashboard.html',form=form, posts = display_posts)
 
 @app.route('/profile')
 def profile():
@@ -295,13 +290,13 @@ def addCommunityMember():
     db.session.commit()
     return '<h1>Member Added</h1>'
 
-@app.route('/user_community', methods = ['GET'])
+# @app.route('/user_community', methods = ['GET'])
 def getUserCommunities():
     communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityNames = []
     for item in communities:
         communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
-    return json.dumps([(k,v) for k,v in enumerate(communityNames)])
+    return [(k,v) for k,v in enumerate(communityNames)]
 
 @app.route('/delete_community', methods = ['POST'])
 def deleteCommunity():
@@ -333,7 +328,7 @@ def getPostsByUser():
     for post in response:
         post['posted_date'] = str(post['posted_date'])
         post['_id'] = str(post['_id'])
-    return json.dumps(response)
+    return response
 
 @app.route('/get_stats', methods = ['GET'])
 def getStats():

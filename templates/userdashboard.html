@@ -1,4 +1,5 @@
-{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %} {% from "includes/_formhelpers.html"
+{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %} 
+{% from "includes/_formhelpers.html"
 import render_field %}
 <div class=row>
   <div class="col-md-2">
@@ -20,17 +21,17 @@ import render_field %}
       <div class="row">
       <div class="col-md-10">  
       <div class="form-group" >
-          {{render_field(form.body, class="form-control", id="editor")}}
+          {{render_field(form.body, class="form-control")}}
       </div>
       </div>
       <div class="col-md-2"> 
           <div class="row">
             <div class="form-group">
-                {{wtf.form_field(form.language)}}
+                {{wtf.form_field(form.category)}}
             </div>
           </div> 
           <div class="row"> 
-              <button class = "btn btn-md btn-primary btn-block" style="width: 90%">Submit</button>
+              <button class = "btn btn-md btn-primary btn-block" style="width: 90%">Post</button>
           </div>
       </div>
       </div>
@@ -38,5 +39,11 @@ import render_field %}
   </div>
 
 </div>
+
+{%for post in posts %}
+<div class="row">
+  <p>{{post.content}}</p>
+</div>
+{% endfor %}
 
 {% endblock %}
