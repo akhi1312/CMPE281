@@ -43,6 +43,23 @@ def test():
     return render_template('admin.html')
 
 
+@app.route('/admin', methods = ['GET'])
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin_users', methods = ['GET','POST'])
+def admin_users():
+    return render_template('admin_users.html')
+
+@app.route('/admin_community', methods = ['GET','POST'])
+def admin_community():
+    return render_template('admin_community.html')
+
+@app.route('/admin_post', methods = ['GET','POST'])
+def admin_post():
+    return render_template('admin_post.html')
+
+
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
