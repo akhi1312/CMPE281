@@ -365,8 +365,6 @@ def getUserCommunities():
         ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
     return [(k,v) for k,v in zip(ids, communityNames)]
 
-
-
 #api to get full community details for a joined user community
 @app.route('/user_joined_community', methods = ['GET'])
 def getCommunityDetailsJoined():
@@ -501,6 +499,30 @@ def getMessageByUser():
     response = {
     "inbox": inbox,
     "sent": sent
+    }
+    return json.dumps(response)
+
+@app.route('/community/<community_id>', methods=['GET', 'POST'])
+def community(community_id):
+    # print(community_id)
+    communityObj = Community.query.filter_by(ID=community_id).first()
+    # print (communityObj.name)
+    posts = mongo.posts
+    communityPosts = posts.find({ "category": communityObj.name })
+    # print (communityPosts)
+    postFinal = []
+    for post in communityPosts:
+        postFinal.append(post)
+    postFinal.sort(key=lambda r: r['posted_date'], reverse=True)
+    for post in postFinal:
+        post['posted_date'] = str(post['posted_date'])
+        post['_id'] = str(post['_id'])
+    moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
+    response = {
+    "name" : communityObj.name,
+    "posts" : postFinal,
+    "moderator" : moderator,
+    "creation_date" : str(communityObj.creation_date).split(" ")[0]
     }
     return json.dumps(response)
 
