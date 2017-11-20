@@ -100,6 +100,7 @@ def new_user():
 def add_post():
     posts = mongo.posts
     post_data = {
+        'category':request.json['category'],
         'title': request.json['title'],
         'content': request.json['content'],
         'author': request.json['author'],
@@ -255,6 +256,15 @@ def deleteCommunity():
     communityID = Community.query.filter_by(name = communityName).first()
     db.session.delete(communityID)
     db.session.commit()
+
+
+def getPostsByCommunity():
+    userID = current_user.username
+    communitties = UserCommunity.query.filter_by(userID=userID).all()
+    posts = mongo.posts
+    result = []
+    for community in communities:
+        result = posts.find({ community: community} )
 
 
 #post according to user
