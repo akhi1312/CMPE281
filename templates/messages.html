@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class=row>
+    <div class="col-md-3 sidebar-nav-fixed d-flex justify-content-center">
+        <div class="affix">
+            <div class="communityboxcard">
+                <ul>
+                    Community Members:
+                    <hr/> {% for community in communities%}
+                    <div class="CommunityNameCard">
+                        <li>
+                            <a href="#">{{community[1]}}</a>
+                        </li>
+                    </div>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
