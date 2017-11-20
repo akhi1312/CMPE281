@@ -35,7 +35,7 @@ class User(UserMixin, db.Model):
 class UserModerator(db.Model):
     __tablename__ = 'user_moderator'
     communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), primary_key=True)
-    moderator = db.Column(db.String(128), db.ForeignKey('users.username'), unique=True)
+    moderator = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
 
 class UserCommunity(db.Model):
     __tablename__ = 'user_community'
