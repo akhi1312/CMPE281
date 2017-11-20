@@ -109,10 +109,10 @@ def new_user():
 def add_post():
     posts = mongo.posts
     post_data = {
-        'category':request.json['category'],
+        'category':request.json['category'].lower(),
         'title': request.json['title'],
         'content': request.json['content'],
-        'author': request.json['author'],
+        'author': current_user.username,
         'attachment': request.json['attachment'],
         'posted_date': datetime.datetime.now(),
         'comments': []
@@ -175,8 +175,6 @@ def get_all_community():
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
 
-
-
 @app.route('/home')
 @login_required
 def home():
@@ -185,10 +183,7 @@ def home():
 
 @app.route('/profile')
 def profile():
-    return render_template('profile.html') 
-
-
-
+    return render_template('profile.html')
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -210,15 +205,6 @@ def logout():
     flash('You have successfully been logged out.')
     session['loggedIn'] = False
     return redirect(url_for('login'))
-
-def getListOfCommunities():
-    communities = Community.query.all()
-    communities_name = [community.name for community in communities]
-    return [(k,v) for k,v in enumerate(communities_name)]
-
-def getCommunityId(communityName):
-    communityObj = Community.query.filter_by(name = communityName).first()
-    return communityObj.ID
 
 #get users in a community
 @app.route('/get_community_users', methods = ['POST'])
@@ -275,6 +261,14 @@ def addCommunityMember():
     db.session.commit()
     return '<h1>Member Added</h1>'
 
+@app.route('/user_community', methods = ['GET'])
+def getUserCommunities():
+    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communityNames = []
+    for item in communities:
+        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+    return json.dumps([(k,v) for k,v in enumerate(communityNames)])
+
 @app.route('/delete_community', methods = ['POST'])
 def deleteCommunity():
     communityName = request.json['name']
@@ -282,20 +276,44 @@ def deleteCommunity():
     db.session.delete(communityID)
     db.session.commit()
 
-
-def getPostsByCommunity():
+@app.route('/get_user_posts', methods = ['GET'])
+def getPostsByUser():
     userID = current_user.username
-    communitties = UserCommunity.query.filter_by(userID=userID).all()
+    communities = UserCommunity.query.filter_by(userID=userID).all()
     posts = mongo.posts
-    result = []
-    for community in communities:
-        result = posts.find({ community: community} )
-
-
+    generalPosts = []
+    communityPosts = []
+    communityNames = []
+    response = []
+    for item in communities:
+        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+    for name in communityNames:
+        communityPosts.extend(posts.find({ "category": name }))
+    for post in communityPosts:
+        response.append(post)
+    generalPosts.append(posts.find({ "category": "general" }))
+    for item in generalPosts:
+        for doc in item:
+            response.append(doc)
+    response.sort(key=lambda r: r['posted_date'], reverse=True)
+    for post in response:
+        post['posted_date'] = str(post['posted_date'])
+        post['_id'] = str(post['_id'])
+    return json.dumps(response)
 #post according to user
 #post acc. to community
 #message inbox user
 #message sent user
+
+
+def getListOfCommunities():
+    communities = Community.query.all()
+    communities_name = [community.name for community in communities]
+    return [(k,v) for k,v in enumerate(communities_name)]
+
+def getCommunityId(communityName):
+    communityObj = Community.query.filter_by(name = communityName).first()
+    return communityObj.ID
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
