@@ -40,7 +40,7 @@ def load_user(username):
 #Test Route
 @app.route('/test', methods = ['GET','POST'])
 def test():
-    return render_template('newCommunity.html')
+    return render_template('admin.html')
 
 
 
