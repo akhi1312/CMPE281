@@ -39,6 +39,10 @@ class commuityRegistraion(Form):
 class ArticleForm(Form):
     title = StringField('Title', validators=[InputRequired(),Length(min=1, max=25)])
     body = TextAreaField('Body', validators=[InputRequired(),Length(max=256)])
+    language = SelectField(
+        'Category',
+        choices=[('cpp', 'C++'), ('py', 'Python'), ('text', 'Plain Text')]
+    )
 
 
 

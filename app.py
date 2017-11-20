@@ -107,17 +107,18 @@ def new_user():
 #add new post
 @app.route('/add_post', methods = ['POST'])
 def add_post():
-    posts = mongo.posts
-    post_data = {
-        'title': request.json['title'],
-        'content': request.json['content'],
-        'author': request.json['author'],
-        'attachment': request.json['attachment'],
-        'posted_date': datetime.datetime.now(),
-        'comments': []
-    }
-    result = posts.insert_one(post_data)
-    return ('One post: {0}'.format(result.inserted_id))
+    print request.json
+    # posts = mongo.posts
+    # post_data = {
+    #     'title': request.json['title'],
+    #     'content': request.json['content'],
+    #     'author': request.json['author'],
+    #     'attachment': request.json['attachment'],
+    #     'posted_date': datetime.datetime.now(),
+    #     'comments': []
+    # }
+    # result = posts.insert_one(post_data)
+    # return ('One post: {0}'.format(result.inserted_id))
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -176,10 +177,18 @@ def get_all_community():
 
 
 
-@app.route('/home')
+@app.route('/home',methods = ['GET','POST'])
 @login_required
 def home():
     form = ArticleForm()
+    if form.validate_on_submit():
+        print 'hiiiii'
+        title = form.title.data
+        body = form.body.data
+        language = form.language.data
+        print title
+        print body
+        print language
     return render_template('userdashboard.html',form=form)
 
 @app.route('/profile')
