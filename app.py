@@ -45,7 +45,6 @@ def test():
 
 @app.route('/',methods = ['GET'])
 def index():
-    billing()
     return render_template('index.html')
 
 @app.route('/admin', methods = ['GET'])
