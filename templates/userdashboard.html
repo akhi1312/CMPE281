@@ -7,7 +7,6 @@ import render_field %}
     <div class="card">
       <img src="../static/images/avatar.png" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
       <h3>{{session.username}}</h3>
-      <p class="title">CEO & Founder, Example</p>
     </div>
     <br/>
     <div style="text-align:center">
@@ -21,7 +20,7 @@ import render_field %}
         <hr/>
         {% for community in communities%}
         <div class="CommunityNameCard">
-          <li><a href="#">{{community[1]}}</a></li>
+          <li><a href={{'/community/%s'%community[0]}}>{{community[1]}}</a></li>
         </div>
         {% endfor %}
       </ul>
