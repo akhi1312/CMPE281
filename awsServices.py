@@ -1,5 +1,5 @@
 import boto3
-def send_email():
+def send_email(message, subject):
     client = boto3.client('ses')
     response = client.send_email(
         Destination={
@@ -15,7 +15,7 @@ def send_email():
             'Body': {
                 'Html': {
                     'Charset': 'UTF-8',
-                    'Data': 'Hi Admin, This is to inform that New commmunity has been created by the User<> and Name of the community .',
+                    'Data': message, 
                 },
                 'Text': {
                     'Charset': 'UTF-8',
@@ -24,13 +24,14 @@ def send_email():
             },
             'Subject': {
                 'Charset': 'UTF-8',
-                'Data': 'Test email',
+                'Data': subject,
             },
         },
         Source='rmodi3191@gmail.com',
     )
 
-def sendMessage():
+
+def sendMessage(userContact,userName,communityName):
     client = boto3.client('sns')
     number = '+15105857576'
-    client.publish(PhoneNumber = number, Message='example text message' )
+    client.publish(PhoneNumber = number, Message='New community has been crerated by ' + userName + '. please approve by login on console.' )

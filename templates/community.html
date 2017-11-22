@@ -1,0 +1,54 @@
+{% extends "base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %} {% from "includes/_formhelpers.html"
+import render_field %}
+<div class="row">
+    <div class="col-md-3 sidebar-nav-fixed d-flex justify-content-center">
+        <div class="affix">
+            <div class="card">
+                <img src="../static/images/avatar.png" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
+                <h2>{{communityObj.name}}</h2>
+                <h5>{{communityObj.description}}</h5>
+                <h6>{{communityObj.address}}</h6>
+                <h6>{{communityObj.city}} - {{communityObj.zip_code}}</h6>
+            </div>
+            <br/>
+            <div class ="communityboxcard">
+                <h4>ManagedBy: </h4><h5>{{moderator}}</h5>
+            </div>
+            <hr/>
+            <div class="communityboxcard">
+                <ul>
+                    Members:
+                    <hr/> {% for member in members %}
+                    <div class="CommunityNameCard">
+                        <li>
+                            <a href="#">{{ member }}</a>
+                        </li>
+                    </div>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="row" style="overflow: auto;">
+            {%for post in posts %}
+            <div class="postsCard">
+                <span>
+                    <img src="../static/images/avatar.png" alt="John" style="width:48px;height:48px;border-radius: 50%;"> {{post.author}}
+                    <h6 class="pull-right">Posted: {{post.posted_date}}</h6>
+                </span>
+                <h5>{{post.category}}</h5>
+                <h2>{{post.title}}</h2>
+                <p>{{post.content}}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+</div>
+
+
+
+{% endblock %}

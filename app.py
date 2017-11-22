@@ -30,7 +30,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
 login_manager.login_view = 'login'
-    
+
 
 
 @login_manager.user_loader
@@ -89,7 +89,12 @@ def new_community():
             return render_template('newCommunity.html',form=form)
         db.session.add(com)
         db.session.commit()
-        return '<h1>New Community is created</h1>'
+        message = 'Hi Admin, This is to inform that '+current_user.username+' has created a new commmunity named as '+name+'. User email is '+ current_user.email +' . Please Approve it.'
+        subject = 'New Community '+ name + ' acceptance mail.'
+        # send_email(message, subject)
+        # sendMessage(current_user.contact_number,current_user.username, name)
+        flash('Community ' + name + 'has been created. Waiting for admin approval.' )
+        return redirect(url_for('home'))
     return render_template('newCommunity.html',form=form)
 
 #create new user
@@ -122,7 +127,8 @@ def new_user():
             return render_template('signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
-        return '<h1>New user has been created</h1>'
+        flash('Registration has been done successfully. Please login.')
+        return redirect(url_for('login'))
     return render_template('signup.html', form=form)
 
 #add new post
@@ -213,11 +219,12 @@ def get_all_community():
 @login_required
 def home():
     categories = getUserCommunities()
-    categories.append((len(categories),'General'))
+    categories.append((0,'General'))
     form = ArticleForm(categories)
     display_posts = getPostsByUser()
     communities = getUserCommunities()
-    print communities
+    # print (communities)
+    # print communities
     if form.validate_on_submit():
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
@@ -227,13 +234,16 @@ def home():
         form.title.data = ""
         form.body.data = ""
         form.category.data = ""
+        display_posts = getPostsByUser()
     return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
+
 
 
 
 @app.before_request
 def before_request():
     g.user = current_user
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -252,9 +262,9 @@ def profile():
         flash('Your changes have been saved.')
         return redirect(url_for('profile'))
     else:
-        form.email.data = user.email 
+        form.email.data = user.email
         form.contact.data = user.contact_number
-        form.firstname.data = user.firstName 
+        form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
     return render_template('profile.html', form=form)
@@ -270,10 +280,10 @@ def login():
                 session['loggedIn'] = True
                 session['username'] = user.username
                 return redirect(url_for('home'))
-        #     else:
-        #         flash('password is incorrect')
-        # else:
-        #     flash('User is not registered')
+            else:
+                flash('password is incorrect')
+        else:
+            flash('User is not registered')
     return render_template('login.html',form=form)
 
 @app.route('/logout')
@@ -342,6 +352,26 @@ def joinCommunity():
     db.session.add(user_comm)
     db.session.commit()
     # return '<h1>Member Added</h1>'
+    communityName = (Community.query.filter_by(ID=communityID).first()).name
+    message = 'Hi Moderator, This is to inform that '+current_user.username+' has joined '+communityName+' community. User email is '+ current_user.email +' .'
+    subject = 'New Member Joined to '+ communityName + ' community.'
+    # send_email(message, subject)
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
+
+#api to join a community
+@app.route('/leave_community', methods = ['POST'])
+def leaveCommunity():
+    userID = current_user.username
+    communityID = request.form['id']
+    UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
+    db.session.commit()
+    communityName = (Community.query.filter_by(ID=communityID).first()).name
+    message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
+    subject = 'Member left '+ communityName + ' community.'
+    # send_email(message, subject)
     data = {
         'status':200
     }
@@ -352,9 +382,11 @@ def joinCommunity():
 def getUserCommunities():
     communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityNames = []
+    ids = []
     for item in communities:
         communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
-    return [(k,v) for k,v in enumerate(communityNames)]
+        ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
+    return [(k,v) for k,v in zip(ids, communityNames)]
 
 #api to get full community details for a joined user community
 @app.route('/user_joined_community', methods = ['GET'])
@@ -447,7 +479,7 @@ def getPostsByUser():
             response.append(doc)
     response.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in response:
-        post['posted_date'] = str(post['posted_date'])
+        post['posted_date'] = str(post['posted_date']).split(".")[-2]
         post['_id'] = str(post['_id'])
     return response
 
@@ -492,6 +524,37 @@ def getMessageByUser():
     "sent": sent
     }
     return json.dumps(response)
+
+@app.route('/community/<community_id>', methods=['GET', 'POST'])
+def community(community_id):
+    # print(community_id)
+    communityObj = Community.query.filter_by(ID=community_id).first()
+    # print (communityObj.name)
+    posts = mongo.posts
+    communityPosts = posts.find({ "category": communityObj.name })
+    # print (communityPosts)
+    users = []
+    userObj = UserCommunity.query.filter_by(communityID = community_id).all()
+    for obj in userObj:
+        users.append(obj.userID)
+    postFinal = []
+    for post in communityPosts:
+        postFinal.append(post)
+    postFinal.sort(key=lambda r: r['posted_date'], reverse=True)
+    for post in postFinal:
+        post['posted_date'] = str(post['posted_date'])
+        post['_id'] = str(post['_id'])
+    moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
+    response = {
+    "communityObj" : communityObj,
+    "posts" : postFinal,
+    "moderator" : moderator,
+    "creation_date" : str(communityObj.creation_date).split(" ")[0],
+    "users" : users
+    }
+    print response['users']
+    return render_template('community.html',communityObj = response['communityObj'],posts = response['posts'], moderator = response['moderator'],
+    date = response['creation_date'], members = response['users'])
 
 # def getListOfCommunities():
 #     communities = Community.query.all()
