@@ -126,20 +126,23 @@ def new_user():
     return render_template('signup.html', form=form)
 
 #add new post
-# @app.route('/add_post', methods = ['POST'])
-def add_post(category,title,content):
+@app.route('/add_post', methods = ['POST'])
+# def add_post(category,title,content):
+def add_post():
     posts = mongo.posts
     post_data = {
-        'category':category.lower(),
-        'title': title,
-        'content': content,
+        'category':request.json['category'].lower(),
+        'title': request.json['title'],
+        'content': request.json['content'],
+        # 'category':category.lower(),
+        # 'title': title,
+        # 'content': content,
         'author': current_user.username,
         'posted_date': datetime.datetime.now(),
         'comments': []
     }
     result = posts.insert_one(post_data)
     return ('One post: {0}'.format(result.inserted_id))
-
 
 @app.route('/messages',methods=['GET'])
 def messages():
@@ -205,9 +208,6 @@ def get_all_community():
     communities = Community.query.all()
     communities_name = [community.name for community in communities]
     return json.dumps(communities_name)
-
-
-
 
 @app.route('/home',methods = ['GET','POST'])
 @login_required
@@ -329,14 +329,14 @@ def approveCommunity():
 @app.route('/join_community', methods = ['POST'])
 def joinCommunity():
     userID = current_user.username
-    # communityName = request.json['name']
+    # communityID = request.json['id']
     communityID = request.form['id']
     # print (communityID.ID)
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
     db.session.add(user_comm)
     db.session.commit()
-    # return '<h1>Member Added</h1>'
+    return '<h1>Member Added</h1>'
     data = {
         'status':200
     }
@@ -347,6 +347,7 @@ def joinCommunity():
 def leaveCommunity():
     userID = current_user.username
     communityID = request.form['id']
+    # communityID = request.json['communityID']
     UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.commit()
     data = {
@@ -510,6 +511,10 @@ def community(community_id):
     posts = mongo.posts
     communityPosts = posts.find({ "category": communityObj.name })
     # print (communityPosts)
+    users = []
+    userObj = UserCommunity.query.filter_by(communityID = community_id).all()
+    for obj in userObj:
+        users.append(obj.userID)
     postFinal = []
     for post in communityPosts:
         postFinal.append(post)
@@ -522,8 +527,32 @@ def community(community_id):
     "name" : communityObj.name,
     "posts" : postFinal,
     "moderator" : moderator,
-    "creation_date" : str(communityObj.creation_date).split(" ")[0]
+    "creation_date" : str(communityObj.creation_date).split(" ")[0],
+    "users" : users
     }
+    return json.dumps(response)
+
+#api to get user friends
+@app.route('/get_user_friends', methods=['GET'])
+def getUserFriends():
+    userID = current_user.username
+    userCommunity = UserCommunity.query.filter_by(userID = userID).all()
+    friends = set()
+    for item in userCommunity:
+        l = UserCommunity.query.filter_by(communityID = item.communityID).all()
+        for user in l:
+            friends.add(user.userID)
+    current = {userID}
+    friendList = friends - current
+    response = []
+    obj = User.query.filter(User.username.in_(friendList))
+    for item in obj:
+        data = {
+        "username" : item.username,
+        "firstName" : item.firstName,
+        "lastName" : item.lastName
+        }
+        response.append(data)
     return json.dumps(response)
 
 # def getListOfCommunities():
