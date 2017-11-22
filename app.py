@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify,g
 
 from flask_bootstrap import Bootstrap
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy 
+from sqlalchemy import desc
 from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm ,EditForm
 from index import app, db, mongo,logger
 from models import Community, User
@@ -47,9 +48,16 @@ def test():
 def index():
     return render_template('index.html')
 
+
+
 @app.route('/admin', methods = ['GET'])
 def admin():
-    return render_template('admin.html')
+    adminData = getStats()
+    users = User.query.order_by(desc(User.joining_date)).limit(5).all()
+    for user in users:
+        print user
+    return render_template('admin.html', adminData=adminData , users=users)
+
 
 @app.route('/admin_users', methods = ['GET','POST'])
 def admin_users():
@@ -243,6 +251,9 @@ def home():
 @app.before_request
 def before_request():
     g.user = current_user
+
+
+
 
 
 
@@ -505,7 +516,7 @@ def getPostsByUser():
     return response
 
 #api to get the statistics
-@app.route('/get_stats', methods = ['GET'])
+#@app.route('/get_stats', methods = ['GET'])
 def getStats():
     communities = len(Community.query.all())
     users = len(User.query.all())
@@ -520,7 +531,7 @@ def getStats():
     "communities" : communities,
     "posts" : count
     }
-    return json.dumps(response)
+    return response
 
 #api to get the user messages
 @app.route('/get_user_messages', methods = ['GET'])
