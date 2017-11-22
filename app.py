@@ -89,7 +89,12 @@ def new_community():
             return render_template('newCommunity.html',form=form)
         db.session.add(com)
         db.session.commit()
-        return '<h1>New Community is created</h1>'
+        message = 'Hi Admin, This is to inform that '+current_user.username+' has created a new commmunity named as '+name+'. User email is '+ current_user.email +' . Please Approve it.'
+        subject = 'New Community '+ name + ' acceptance mail.'
+        # send_email(message, subject)
+        # sendMessage(current_user.contact_number,current_user.username, name)
+        flash('Community ' + name + 'has been created. Waiting for admin approval.' )
+        return redirect(url_for('home'))
     return render_template('newCommunity.html',form=form)
 
 #create new user
@@ -122,7 +127,8 @@ def new_user():
             return render_template('signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
-        return '<h1>New user has been created</h1>'
+        flash('Registration has been done successfully. Please login.')
+        return redirect(url_for('login'))
     return render_template('signup.html', form=form)
 
 #add new post
@@ -228,7 +234,16 @@ def home():
         form.title.data = ""
         form.body.data = ""
         form.category.data = ""
+        display_posts = getPostsByUser()
     return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
+
+
+
+
+@app.before_request
+def before_request():
+    g.user = current_user
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -265,10 +280,10 @@ def login():
                 session['loggedIn'] = True
                 session['username'] = user.username
                 return redirect(url_for('home'))
-        #     else:
-        #         flash('password is incorrect')
-        # else:
-        #     flash('User is not registered')
+            else:
+                flash('password is incorrect')
+        else:
+            flash('User is not registered')
     return render_template('login.html',form=form)
 
 @app.route('/logout')
@@ -336,7 +351,12 @@ def joinCommunity():
                         communityID=communityID)
     db.session.add(user_comm)
     db.session.commit()
-    return '<h1>Member Added</h1>'
+
+    # return '<h1>Member Added</h1>'
+    communityName = (Community.query.filter_by(ID=communityID).first()).name
+    message = 'Hi Moderator, This is to inform that '+current_user.username+' has joined '+communityName+' community. User email is '+ current_user.email +' .'
+    subject = 'New Member Joined to '+ communityName + ' community.'
+    # send_email(message, subject)
     data = {
         'status':200
     }
@@ -350,6 +370,10 @@ def leaveCommunity():
     # communityID = request.json['communityID']
     UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.commit()
+    communityName = (Community.query.filter_by(ID=communityID).first()).name
+    message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
+    subject = 'Member left '+ communityName + ' community.'
+    # send_email(message, subject)
     data = {
         'status':200
     }
@@ -457,7 +481,7 @@ def getPostsByUser():
             response.append(doc)
     response.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in response:
-        post['posted_date'] = str(post['posted_date'])
+        post['posted_date'] = str(post['posted_date']).split(".")[-2]
         post['_id'] = str(post['_id'])
     return response
 
@@ -524,13 +548,15 @@ def community(community_id):
         post['_id'] = str(post['_id'])
     moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
     response = {
-    "name" : communityObj.name,
+    "communityObj" : communityObj,
     "posts" : postFinal,
     "moderator" : moderator,
     "creation_date" : str(communityObj.creation_date).split(" ")[0],
     "users" : users
     }
-    return json.dumps(response)
+    print response['users']
+    return render_template('community.html',communityObj = response['communityObj'],posts = response['posts'], moderator = response['moderator'],
+    date = response['creation_date'], members = response['users'])
 
 #api to get user friends
 @app.route('/get_user_friends', methods=['GET'])
