@@ -249,7 +249,9 @@ def before_request():
 @login_required
 def profile():
     username = session['username']
+    userposts = mongo.posts.find({ "author": username })
     user = User.query.filter_by(username=username).first()
+
     form = EditForm(request.form)
     if form.validate_on_submit():
         print ("Inside User Updated")
@@ -267,7 +269,7 @@ def profile():
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', form=form)
+    return render_template('profile.html', form=form , userposts = userposts)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
