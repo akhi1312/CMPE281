@@ -10,8 +10,8 @@
   <div id="w">
     <div id="content" class="clearfix">
       <div id="userphoto"><img src="../static/images/avatar.png" alt="default avatar"  width="100px" height="100px"></div>
-      <span><h1>{{session.username}} </h1> </span>
-
+      <span><h1>{{g.user.firstName.capitalize()}} </h1> </span>
+ 
 
       <nav id="profiletabs">
         <ul class="clearfix">
@@ -23,11 +23,23 @@
       </nav>
       
       <section id="bio">
-       
+        <table class="table table-striped">
+    <tbody>
+      <tr>
+        <td>Email</td>
+        <td>{{ g.user.email }}</td>
+      </tr>
+      <tr>
+       <td>Name </td>
+        <td>{{ g.user.firstName }} {{ g.user.lastName }}</td>
+      </tr>
+      <tr>
+        <td>Contact</td>
+        <td>{{ g.user.contact_number }}</td>
+      </tr>
+    </tbody>
+  </table>
         
-        <p>Can't a guy call his mother pretty without it seeming strange? Amen. I think that's one of Mom's little fibs, you know, like I'll sacrifice anything for my children.</p>
-        
-        <p>She's always got to wedge herself in the middle of us so that she can control everything. Yeah. Mom's awesome. I run a pretty tight ship around here. With a pool table.</p>
       </section>
       
       <section id="activity" class="hidden">
@@ -55,34 +67,29 @@
       </section>
       
       <section id="settings" class="hidden">
-    
- <h1>Edit Your Profile</h1>
-  <form action="/profile" method="POST" >
+<div class="container"> 
+ <h3>Edit Your Profile</h3>
+  <form action="/profile" method="POST"  >
       {{form.hidden_tag()}}
-      <table>
+      <table class="table table-striped">
           <tr>
-              <td> Email :</td>
-              <td>{{ form.email(size=24) }}</td>
+              <td> {{wtf.form_field(form.email)}} </td>
           </tr>
           <tr>
-              <td>Contact :</td>
-              <td>{{ form.contact(cols=32, rows=4) }}</td>
+              <td> {{wtf.form_field(form.contact)}}
           </tr>
              <tr>
-              <td>Firstname :</td>
-              <td>{{ form.firstname(cols=32, rows=4) }}</td>
+            <td> {{wtf.form_field(form.firstname)}}
           </tr>
              <tr>
-              <td>Lastname :</td>
-              <td>{{ form.lastname(cols=32, rows=4) }}</td>
+         <td> {{wtf.form_field(form.lastname)}}
           </tr>
-          <tr>
-              <td><input type="submit" value="Save Changes"></td>
-          </tr>
+              
       </table>
+      <input type="submit" value="Save Changes">
      
   </form>
-
+</div>
 
 
 

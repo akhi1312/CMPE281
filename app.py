@@ -231,7 +231,9 @@ def home():
 
 
 
-
+@app.before_request
+def before_request():
+    g.user = current_user
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
