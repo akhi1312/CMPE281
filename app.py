@@ -245,12 +245,29 @@ def before_request():
     g.user = current_user
 
 
+
+
+@app.route('/profile/<username>', methods=['GET', 'POST'])
+@login_required
+def profilefrnd(username):
+    userposts = mongo.posts.find({ "author": username })
+    userFriends = getUserFriends(username);
+    user = User.query.filter_by(username=username).first()
+    form = EditForm(request.form)
+    return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
+    
+
+
+
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     username = session['username']
     userposts = mongo.posts.find({ "author": username })
+    userFriends = getUserFriends();
     user = User.query.filter_by(username=username).first()
+    for friends in userFriends:
+        print friends
 
     form = EditForm(request.form)
     if form.validate_on_submit():
@@ -269,7 +286,7 @@ def profile():
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', form=form , userposts = userposts)
+    return render_template('profile.html', form=form , userposts = userposts , userFriends = userFriends ,user = user)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -562,8 +579,11 @@ def community(community_id):
 
 #api to get user friends
 @app.route('/get_user_friends', methods=['GET'])
-def getUserFriends():
-    userID = current_user.username
+def getUserFriends(username = None):
+    if  not username:
+        userID = current_user.username
+    else:
+        userID = username
     userCommunity = UserCommunity.query.filter_by(userID = userID).all()
     friends = set()
     for item in userCommunity:
@@ -581,7 +601,7 @@ def getUserFriends():
         "lastName" : item.lastName
         }
         response.append(data)
-    return json.dumps(response)
+    return response
 
 # def getListOfCommunities():
 #     communities = Community.query.all()

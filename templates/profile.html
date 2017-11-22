@@ -10,7 +10,7 @@
   <div id="w">
     <div id="content" class="clearfix">
       <div id="userphoto"><img src="../static/images/avatar.png" alt="default avatar"  width="100px" height="100px"></div>
-      <span><h1>{{g.user.firstName.capitalize()}} </h1> </span>
+      <span><h1>{{user.firstName.capitalize()}} </h1> </span>
  
 
       <nav id="profiletabs">
@@ -18,7 +18,9 @@
           <li><a href="#bio" class="sel">Bio</a></li>
           <li><a href="#activity">Activity</a></li>
           <li><a href="#friends">Friends</a></li>
+          {%if session.username == user.username%}
           <li><a href="#settings">Settings</a></li>
+          {%endif%}
         </ul>
       </nav>
       
@@ -27,15 +29,15 @@
     <tbody>
       <tr>
         <td>Email</td>
-        <td>{{ g.user.email }}</td>
+        <td>{{ user.email }}</td>
       </tr>
       <tr>
        <td>Name </td>
-        <td>{{ g.user.firstName }} {{ g.user.lastName }}</td>
+        <td>{{ user.firstName }} {{ g.user.lastName }}</td>
       </tr>
       <tr>
         <td>Contact</td>
-        <td>{{ g.user.contact_number }}</td>
+        <td>{{ user.contact_number }}</td>
       </tr>
     </tbody>
   </table>
@@ -52,16 +54,17 @@
       </section>
       
       <section id="friends" class="hidden">
-        <p>Friends list:</p>
-        
-        <ul id="friendslist" class="clearfix">
-          <li><a href="#"><img src="../static/images/avatar.png" width="22" height="22"> Username</a></li>
-          <li><a href="#"><img src="../static/images/avatar.png" width="22" height="22"> SomeGuy123</a></li>
-          <li><a href="#"><img src="../static/images/avatar.png" width="22" height="22"> PurpleGiraffe</a></li>
-        </ul>
-      </section>
+
       
-      <section id="settings" class="hidden">
+        <p>Friends list:</p>
+        {% for friends in userFriends %}
+        <ul id="friendslist" class="clearfix">
+          <li><a href="{{'/profile/%s'% friends.username}}"><img src="../static/images/avatar.png" width="22" height="22"> {{ friends.firstName}} {{friends.lastName}}</a></li>
+        </ul> 
+         {% endfor %}
+      </section>
+    {%if session.username == user.username%}   
+ <section id="settings" class="hidden">
 <div class="container"> 
  <h3>Edit Your Profile</h3>
   <form action="/profile" method="POST"  >
@@ -91,6 +94,7 @@
 
         
         </section>
+         {%endif%}
     </div><!-- @end #content -->
   </div><!-- @end #w -->
 <script type="text/javascript">
