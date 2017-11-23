@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify, g, current_app
 from flask_moment import Moment
 from flask_bootstrap import Bootstrap
-from flask_sqlalchemy import SQLAlchemy 
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
 from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm ,EditForm
 from index import app, db, mongo,logger
@@ -218,9 +218,6 @@ def add_post():
         'category':request.json['category'].lower(),
         'title': request.json['title'],
         'content': request.json['content'],
-        # 'category':category.lower(),
-        # 'title': title,
-        # 'content': content,
         'author': current_user.username,
         'posted_date': datetime.datetime.now(),
         'comments': []
@@ -240,7 +237,6 @@ def listOfCommunitites():
     joinedCommunities = getCommunityDetailsJoined()
     unjoinedCommunities = getCommunityDetailsUnjoined()
     return render_template('joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
-
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -288,7 +284,6 @@ def add_complaint():
     result = complaints.insert_one(complaint_data)
     return ('One complaint: {0}'.format(result.inserted_id))
 
-
 #get all the distict communities
 @app.route('/get_all_community', methods = ['GET'])
 def get_all_community():
@@ -304,8 +299,6 @@ def home():
     form = ArticleForm(categories)
     display_posts = getPostsByUser()
     communities = getUserCommunities()
-    # print (communities)
-    # print communities
     if form.validate_on_submit():
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
@@ -318,18 +311,9 @@ def home():
         display_posts = getPostsByUser()
     return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
 
-
-
-
 @app.before_request
 def before_request():
     g.user = current_user
-
-
-
-
-
-
 
 @app.route('/profile/<username>', methods=['GET', 'POST'])
 @login_required
@@ -340,9 +324,6 @@ def profilefrnd(username):
     form = EditForm(request.form)
     return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
     
-
-
-
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -448,19 +429,14 @@ def approveCommunity():
 @app.route('/join_community', methods = ['POST'])
 def joinCommunity():
     userID = current_user.username
-    # communityID = request.json['id']
     communityID = request.form['id']
-    # print (communityID.ID)
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
     db.session.add(user_comm)
     db.session.commit()
-
-    # return '<h1>Member Added</h1>'
     communityName = (Community.query.filter_by(ID=communityID).first()).name
     message = 'Hi Moderator, This is to inform that '+current_user.username+' has joined '+communityName+' community. User email is '+ current_user.email +' .'
     subject = 'New Member Joined to '+ communityName + ' community.'
-    # send_email(message, subject)
     data = {
         'status':200
     }
@@ -471,20 +447,26 @@ def joinCommunity():
 def leaveCommunity():
     userID = current_user.username
     communityID = request.form['id']
-    # communityID = request.json['communityID']
-    UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
-    db.session.commit()
-    communityName = (Community.query.filter_by(ID=communityID).first()).name
-    message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
-    subject = 'Member left '+ communityName + ' community.'
-    # send_email(message, subject)
-    data = {
-        'status':200
-    }
-    return json.dumps(data)
+    obj = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    if obj == userID:
+        flash("User cannot be removed", "alert")
+        data = {
+            'status':200
+        }
+        return json.dumps(data)
+    else:
+        UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
+        db.session.commit()
+        communityName = (Community.query.filter_by(ID=communityID).first()).name
+        message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
+        subject = 'Member left '+ communityName + ' community.'
+        # send_email(message, subject)
+        data = {
+            'status':200
+        }
+        return json.dumps(data)
 
 #api to get communities a user is member of
-# @app.route('/user_community', methods = ['GET'])
 def getUserCommunities():
     communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityNames = []
@@ -517,9 +499,7 @@ def getCommunityDetailsJoined():
     for i in range(0,len(moderators)):
         response[i]['moderator'] = moderators[i]
         response[i]['users'] = users[i]
-    # return json.dumps(response)
     return response
-    # print (communities)
 
 #api to get full community details for a unjoined user community
 @app.route('/user_unjoined_community', methods = ['GET'])
@@ -633,12 +613,9 @@ def getMessageByUser():
 
 @app.route('/community/<community_id>', methods=['GET', 'POST'])
 def community(community_id):
-    # print(community_id)
     communityObj = Community.query.filter_by(ID=community_id).first()
-    # print (communityObj.name)
     posts = mongo.posts
     communityPosts = posts.find({ "category": communityObj.name })
-    # print (communityPosts)
     users = []
     userObj = UserCommunity.query.filter_by(communityID = community_id).all()
     for obj in userObj:
@@ -688,14 +665,22 @@ def getUserFriends(username = None):
         response.append(data)
     return response
 
-# def getListOfCommunities():
-#     communities = Community.query.all()
-#     communities_name = [community.name for community in communities]
-#     return [(k,v) for k,v in enumerate(communities_name)]
-#
-# def getCommunityId(communityName):
-#     communityObj = Community.query.filter_by(name = communityName).first()
-#     return communityObj.ID
+@app.route('/delete_user', methods = ['POST'])
+def deleteUser():
+    userID = request.json['userID']
+    userCommObj = UserCommunity.query.filter_by(userID=userID).all()
+    moderator = UserModerator.query.filter_by(userID).all()
+    if moderator not None:
+        # flash("Delete user from moderator list")
+    if userCommObj is not:
+        for item in userCommObj:
+            UserCommunity.query.filter_by(communityID=item.communityID, userID=userID).delete()
+            db.session.commit()
+
+def admin():
+    userModObj = UserModerator.query.all()
+    communityNames = []
+    for obj in userModObj:
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
