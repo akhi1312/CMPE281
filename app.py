@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, make_response, url_for, flash
 
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import desc
 from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm ,EditForm
 from index import app, db, mongo,logger
 from models import Community, User
@@ -47,9 +48,16 @@ def test():
 def index():
     return render_template('index.html')
 
+
+
 @app.route('/admin', methods = ['GET'])
 def admin():
-    return render_template('admin.html')
+    adminData = getStats()
+    users = User.query.order_by(desc(User.joining_date)).limit(5).all()
+    for user in users:
+        print user
+    return render_template('admin.html', adminData=adminData , users=users)
+
 
 @app.route('/admin_users', methods = ['GET','POST'])
 def admin_users():
@@ -149,7 +157,10 @@ def add_post():
 
 @app.route('/messages',methods=['GET'])
 def messages():
-    return render_template('messages.html')
+    friends = getUserFriends()
+    for friend in friends:
+        print friend
+    return render_template('messages.html', members = friends)
 
 @app.route('/joincommunity',methods=['GET'])
 def listOfCommunitites():
@@ -234,11 +245,25 @@ def home():
 def before_request():
     g.user = current_user
 
+@app.route('/profile/<username>', methods=['GET', 'POST'])
+@login_required
+def profilefrnd(username):
+    userposts = mongo.posts.find({ "author": username })
+    userFriends = getUserFriends(username);
+    user = User.query.filter_by(username=username).first()
+    form = EditForm(request.form)
+    return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
+    
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     username = session['username']
+    userposts = mongo.posts.find({ "author": username })
+    userFriends = getUserFriends();
     user = User.query.filter_by(username=username).first()
+    for friends in userFriends:
+        print friends
+
     form = EditForm(request.form)
     if form.validate_on_submit():
         print ("Inside User Updated")
@@ -256,7 +281,7 @@ def profile():
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', form=form)
+    return render_template('profile.html', form=form , userposts = userposts , userFriends = userFriends ,user = user)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -474,7 +499,7 @@ def getPostsByUser():
     return response
 
 #api to get the statistics
-@app.route('/get_stats', methods = ['GET'])
+#@app.route('/get_stats', methods = ['GET'])
 def getStats():
     communities = len(Community.query.all())
     users = len(User.query.all())
@@ -489,7 +514,7 @@ def getStats():
     "communities" : communities,
     "posts" : count
     }
-    return json.dumps(response)
+    return response
 
 #api to get the user messages
 @app.route('/get_user_messages', methods = ['GET'])
@@ -545,8 +570,11 @@ def community(community_id):
 
 #api to get user friends
 @app.route('/get_user_friends', methods=['GET'])
-def getUserFriends():
-    userID = current_user.username
+def getUserFriends(username = None):
+    if  not username:
+        userID = current_user.username
+    else:
+        userID = username
     userCommunity = UserCommunity.query.filter_by(userID = userID).all()
     friends = set()
     for item in userCommunity:
@@ -564,7 +592,7 @@ def getUserFriends():
         "lastName" : item.lastName
         }
         response.append(data)
-    return json.dumps(response)
+    return response
 
 @app.route('/delete_user', methods = ['POST'])
 def deleteUser():
@@ -582,6 +610,6 @@ def admin():
     userModObj = UserModerator.query.all()
     communityNames = []
     for obj in userModObj:
-        
+
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)

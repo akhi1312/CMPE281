@@ -479,7 +479,7 @@ a:hover { text-decoration: underline; }
   width:100%;
   font-family: arial;
   margin: 5px 0;
-  padding: 5px 5px 0 5px;
+  padding: 5px;
   border: 1px black solid;
 }
 
@@ -509,6 +509,21 @@ button {
   font-size: 18px;
 }
 
+
+.list-content{
+ min-height:300px;
+}
+.list-content .list-group .title{
+  background:#5bc0de;
+  border:2px solid #DDDDDD;
+  font-weight:bold;
+  color:#FFFFFF;
+}
+.list-group-item img {
+    height:80px; 
+    width:80px;
+}
+
 /* a {
   text-decoration: none;
   font-size: 22px;
@@ -527,4 +542,4 @@ button:hover, a:hover {
  
 html[xmlns] .clearfix { display: block; }
 * html .clearfix { height: 1%; }
->>>>>>> cb5c1eb871fd5bf95821917c135604fcf8b57dbf
+

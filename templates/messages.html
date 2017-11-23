@@ -1,21 +1,29 @@
-{% extends "base.html" %}
-{% block page_content %}
+{% extends "base.html" %} {% block page_content %}
 <div class=row>
     <div class="col-md-3 sidebar-nav-fixed d-flex justify-content-center">
         <div class="affix">
-            <div class="communityboxcard">
-                <ul>
-                    Community Members:
-                    <hr/> {% for community in communities%}
-                    <div class="CommunityNameCard">
-                        <li>
-                            <a href="#">{{community[1]}}</a>
-                        </li>
-                    </div>
-                    {% endfor %}
-                </ul>
-            </div>
+            Friends:    
+            <ul>
+                {% for member in members %}
+                <div>
+                    <li>
+                        <a href="#">{{member.firstName}} {{member.lastName}}</a>
+                    </li>
+                </div>
+                {% endfor %}
+            </ul>
         </div>
+    </div>
+    <div class="col-md-8">
+            <form>
+                <div class="col-md-10">
+                    <label class="sr-only" for="inlineFormInput">Name</label>
+                    <input type="text" class = "form-control" id="inlineFormInput" placeholder="Enter Message">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </div>
+            </form>
     </div>
 </div>
 {% endblock %}
