@@ -21,8 +21,13 @@ class User(UserMixin, db.Model):
     lastName = db.Column(db.String(128), index=True, unique=False)
     email = db.Column(db.String(128), index=True, unique=True)
     password = db.Column(db.String(256), index=True, unique=False)
+    city = db.Column(db.String(256), index=True, unique=False)
     contact_number = db.Column(db.String(10), index=True, unique=False)
     joining_date = db.Column(db.DateTime, index=True, unique=False, default=False)
+    imageUrl = db.Column(db.String(256), index=True, unique=False)
+    aboutMe = db.Column(db.String(512), index=True, unique=False)
+    role = db.Column(db.String(60), index=True, unique=False)
+    status = db.Column(db.String(60), index=True, default="requested")
 
     def hash_password(self, password):
         self.password = pwd_context.encrypt(password)
