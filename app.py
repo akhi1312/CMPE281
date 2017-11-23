@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify,g
-
+from flask import Flask, render_template, request, make_response, url_for, flash, redirect, session, abort, jsonify, g, current_app
+from flask_moment import Moment
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy 
 from sqlalchemy import desc
@@ -19,12 +19,14 @@ from models import Community, User, UserCommunity, UserModerator
 import  myexception
 from flask_httpauth import HTTPBasicAuth
 from awsServices import send_email, sendMessage
+from flask_mail import Mail,Message
+from threading import Thread
 
 auth = HTTPBasicAuth()
 import pprint
 
 app = Flask(__name__)
-
+moment = Moment(app)
 Bootstrap(app)
 app.config['SECRET_KEY'] = os.urandom(32)
 login_manager = LoginManager()
@@ -32,7 +34,68 @@ login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
 login_manager.login_view = 'login'
 
+# Flask Mail settings
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 
+app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[SocialNetwork]'
+app.config['FLASKY_MAIL_SENDER'] = 'Admin <socialnetwork@gmail.com>'
+app.config['FLASKY_ADMIN'] = os.environ.get('FLASKY_ADMIN')
+
+mail = Mail(app)
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
+
+def send_email(to, subject, template, **kwargs):
+    msg = Message(app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject,
+                  sender=app.config['FLASKY_MAIL_SENDER'], recipients=[to])
+    # msg.body = render_template(template + '.txt', **kwargs)
+    msg.html = render_template(template + '.html', **kwargs)
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+    return thr
+# Flask Mail settings
+
+#Confirmation Email
+@app.route('/confirm/<token>')
+@login_required
+def confirm(token):
+    print token
+    # if current_user.confirmed:
+    #     return redirect(url_for('home'))
+    # if current_user.confirm(token):
+    #     db.session.commit()
+    #     flash('You have confirmed your account. Thanks!')
+    # else:
+    #     flash('The confirmation link is invalid or has expired.')
+    return redirect(url_for('home'))
+
+@app.before_request
+def before_request():
+    # if current_user.is_authenticated \
+    #         and not current_user.confirmed:
+        return redirect(url_for('unconfirmed'))
+
+@app.route('/unconfirmed')
+def unconfirmed():
+    if current_user.confirmed:
+        return redirect(url_for('index'))
+    return render_template('_unconfirmed.html')
+
+@app.route('/confirm')
+@login_required
+def resend_confirmation():
+    token = current_user.generate_confirmation_token()
+    send_email(current_user.email, 'Confirm Your Account',
+               'auth/email/confirm', user=current_user, token=token)
+    flash('A new confirmation email has been sent to you by email.')
+    return redirect(url_for('home'))
 
 @login_manager.user_loader
 def load_user(username):
@@ -94,7 +157,7 @@ def new_community():
         if Community.query.filter_by(name=name).first() is not None:
             flash("Community name already exists")
             form = commuityRegistraion()
-            return render_template('newCommunity.html',form=form)
+            return render_template('_newCommunity.html',form=form)
         db.session.add(com)
         db.session.commit()
         message = 'Hi Admin, This is to inform that '+current_user.username+' has created a new commmunity named as '+name+'. User email is '+ current_user.email +' . Please Approve it.'
@@ -103,7 +166,7 @@ def new_community():
         # sendMessage(current_user.contact_number,current_user.username, name)
         flash('Community ' + name + 'has been created. Waiting for admin approval.' )
         return redirect(url_for('home'))
-    return render_template('newCommunity.html',form=form)
+    return render_template('_newCommunity.html',form=form)
 
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
@@ -128,16 +191,23 @@ def new_user():
         if User.query.filter_by(username=username).first() is not None:
             flash("Username already exists")
             form = RegistrationForm()
-            return render_template('signup.html', form=form)
+            return render_template('_signup.html', form=form)
         elif User.query.filter_by(email=email).first() is not None:
             flash("Email already registered")
             form = RegistrationForm()
-            return render_template('signup.html', form=form)
+            return render_template('_signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
+        if app.config['FLASKY_ADMIN']:
+            send_email(app.config['FLASKY_ADMIN'], ' New User',
+                       '_newuser', user=new_user)
+            token = new_user.generate_confirmation_token()
+            send_email(new_user.email, 'Confirm Your Account',
+                       '_confirmemail', user=new_user, token=token)
+            flash('A confirmation email has been sent to you by email.')
         flash('Registration has been done successfully. Please login.')
         return redirect(url_for('login'))
-    return render_template('signup.html', form=form)
+    return render_template('_signup.html', form=form)
 
 #add new post
 @app.route('/add_post', methods = ['POST'])
@@ -312,12 +382,13 @@ def login():
                 login_user(user, remember=form.rememberMe.data)
                 session['loggedIn'] = True
                 session['username'] = user.username
+                flash('You have successfully logged In')
                 return redirect(url_for('home'))
             else:
                 flash('password is incorrect')
         else:
             flash('User is not registered')
-    return render_template('login.html',form=form)
+    return render_template('_login.html',form=form)
 
 @app.route('/logout')
 @login_required

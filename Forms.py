@@ -1,32 +1,35 @@
-from flask_wtf import Form
-from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError, TextAreaField
-from wtforms.validators import InputRequired, Email, Length, NumberRange
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError, TextAreaField, SubmitField
+from wtforms.validators import InputRequired, Email, Length, NumberRange, DataRequired, Regexp
 
 
-class LoginForm(Form):
+class LoginForm(FlaskForm):
     """User Login Form"""
-    username = StringField('username',validators=[InputRequired(),Length(min=4,max=15)])
-    password = PasswordField('password',validators=[InputRequired(),Length(min=8, max=80)])
+    username = StringField('Username',validators=[DataRequired(),Length(4,15,'UserName must be between 4 to 15 characters')])
+    password = PasswordField('Password',validators=[DataRequired(),Length(8,80,'Password must be of atleast 8 characters')])
     rememberMe = BooleanField('Remember Me',default=False)
+    submit = SubmitField('Sign In')
 
-class RegistrationForm(Form):
+class RegistrationForm(FlaskForm):
     """User Registration Form"""
 
-    email = StringField('Email:',validators=[InputRequired(),Email(message='Invalid email'),Length(max=50)])
-    username = StringField('Username:', validators=[InputRequired(), Length(min=4, max=15)])
-    firstname = StringField('Firstname:', validators=[InputRequired(), Length(min=4, max=30)])
-    lastname = StringField('Lastname:', validators=[InputRequired(), Length(min=4, max=30)])
-    contact = IntegerField('Contact:', validators=[InputRequired()])
-    password = PasswordField('Password:',validators=[InputRequired(),Length(min=8, max=80)])
+    email = StringField('Email:',validators=[DataRequired(),Email(message='Invalid email'),Length(5,50,'Email must be of atleast more than 5 characters')])
+    username = StringField('Username:', validators=[DataRequired(), Length(4,15,'UserName must be between 4 to 15 characters'),Regexp('^[A-Za-z][A-Za-z0-9_]*$', 0,
+               'Usernames must have only letters, numbers or underscores')])
+    firstname = StringField('Firstname:', validators=[DataRequired(), Length(1,30,'Firstname must be between 1 to 30 characters')])
+    lastname = StringField('Lastname:', validators=[DataRequired(), Length(1,30,'Lastname must be between 1 to 30 characters')])
+    contact = IntegerField('Mobile:', validators=[DataRequired()])
+    password = PasswordField('Password:',validators=[DataRequired(),Length(8, 80,'Password must be of atleast 8 characters')])
+    submit = SubmitField('Register')
 
-
-class EditForm(Form):
+class EditForm(FlaskForm):
     """User Edit Form"""
 
-    email = StringField('Email:',validators=[InputRequired(),Email(message='Invalid email'),Length(max=50)])
-    firstname = StringField('Firstname:', validators=[InputRequired(), Length(min=4, max=30)])
-    lastname = StringField('Lastname:', validators=[InputRequired(), Length(min=4, max=30)])
-    contact = IntegerField('Contact:', validators=[InputRequired()])
+    email = StringField('Email:',validators=[DataRequired(),Email(message='Invalid email'),Length(5,50,'Email must be of atleast more than 5 characters')])
+    firstname = StringField('Firstname:', validators=[DataRequired(), Length(1,30,'Firstname must be between 1 to 30 characters')])
+    lastname = StringField('Lastname:', validators=[DataRequired(), Length(1,30,'Lastname must be between 1 to 30 characters')])
+    contact = IntegerField('Mobile:', validators=[DataRequired()])
+    submit = SubmitField('Update')
 
     # def validateEmail(self,_email):
     #     if User.query.filter_by(email=_email).first():
@@ -36,23 +39,24 @@ class EditForm(Form):
     #     if User.query.filter_by(username=_username).first():
     #         raise ValidationError('Username is already in use.')
 
-class commuityRegistraion(Form):
+class commuityRegistraion(FlaskForm):
     """User Registration Form"""
-    name = StringField('Name:', validators=[InputRequired(), Length(max=50)])
-    desc = StringField('Description:',validators=[Length(max=256)])
-    address = StringField('Address:', validators=[InputRequired(), Length(min=4, max=50)])
-    city = StringField('City:', validators=[InputRequired(), Length(max=30)])
-    zip_code = IntegerField('ZipCode:', validators=[InputRequired()])
+    name = StringField('Name:', validators=[DataRequired(), Length(4,50,'Community Name must be between 4 to 50 characters')])
+    desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
+    address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
+    city = StringField('City:', validators=[DataRequired(), Length(max=30)])
+    zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
 
 # Post Form Class
-class ArticleForm(Form):
+class ArticleForm(FlaskForm):
     def __init__(self, categories, *args,**kwargs):
         super(ArticleForm, self).__init__(*args, **kwargs)
         self.category.choices = categories
         
-    title = StringField('Title', validators=[InputRequired(),Length(min=1, max=256)])
-    body = TextAreaField('Content', validators=[InputRequired(),Length(max=256)])
-    category = SelectField('Category:',coerce=int,validators=[InputRequired()])
+    title = StringField('Title', validators=[DataRequired(),Length(min=1, max=256)])
+    body = TextAreaField('Content', validators=[DataRequired(),Length(max=256)])
+    category = SelectField('Category:',coerce=int,validators=[DataRequired()])
+    submit = SubmitField('Post')
 
 
 

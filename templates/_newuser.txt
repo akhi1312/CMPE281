@@ -1,0 +1,4 @@
+
+Dear Admin,
+
+User {{ user.username }} has joined. Email: {{ user.email }}

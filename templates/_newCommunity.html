@@ -1,0 +1,29 @@
+{% extends "_base.html" %}
+{% block title %}New Community Registration{% endblock %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-6 col-md-offset-3">
+        <div class="page-header">
+            <h1>Create New Community</h1>
+        </div>
+        <form method="POST" action="/new_community">
+            {{form.hidden_tag()}}
+            {{wtf.form_field(form.name)}}
+            {{wtf.form_field(form.desc)}}
+            {{wtf.form_field(form.address)}}
+            {{wtf.form_field(form.city)}}
+            {{wtf.form_field(form.zip_code)}}
+            <div class="row">
+              <div class="col"> <a class="btn btn-danger btn-block" href="/home">Cancel</a>
+            </div>
+            <div class="col">
+              <button class = "btn btn-md btn-primary btn-block" type="submit">Add</button>
+            </div>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,8 @@
 from index import db
 from passlib.apps import custom_app_context as pwd_context
 from flask_login import UserMixin
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from flask import current_app
 
 class Community(db.Model):
     __tablename__ = 'community'
@@ -32,6 +34,22 @@ class User(UserMixin, db.Model):
 
     def get_id(self):
         return unicode(self.username)
+
+    def generate_confirmation_token(self, expiration=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'confirm': self.username}).decode('utf-8')
+
+    def confirm(self, token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token.encode('utf-8'))
+        except:
+            return False
+        if data.get('confirm') != self.username:
+            return False
+        self.confirmed = True
+        db.session.add(self)
+        return True
 
 class UserModerator(db.Model):
     __tablename__ = 'user_moderator'
