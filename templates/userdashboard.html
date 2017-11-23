@@ -36,7 +36,7 @@ import render_field %}
       </div>
       <div class="row" >
       <div class="col-md-10">
-      <div class="form-group" >
+      <div class="form-group">
           {{render_field(form.body, class="form-control")}}
       </div>
       </div>
@@ -60,7 +60,7 @@ import render_field %}
         <h2>{{post.title}}</h2>
         <p>{{post.content}}</p>
         <div class='col-2 pull-right' >
-          <a class="btn btn-success btn-block">Comment</a>
+          <a class="btn btn-success btn-block" href="#">Comment</a>
         </div>
       </div>
     {% endfor %}
@@ -69,7 +69,5 @@ import render_field %}
   </div>
 
 </div>
-
-
 
 {% endblock %}

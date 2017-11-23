@@ -152,7 +152,10 @@ def add_post():
 
 @app.route('/messages',methods=['GET'])
 def messages():
-    return render_template('messages.html')
+    friends = getUserFriends()
+    for friend in friends:
+        print friend
+    return render_template('messages.html', members = friends)
 
 @app.route('/joincommunity',methods=['GET'])
 def listOfCommunitites():
@@ -579,7 +582,7 @@ def getUserFriends():
         "lastName" : item.lastName
         }
         response.append(data)
-    return json.dumps(response)
+    return response
 
 # def getListOfCommunities():
 #     communities = Community.query.all()
