@@ -147,8 +147,10 @@ def admin_users():
 @app.route('/admin_community', methods = ['GET','POST'])
 def admin_community():
    # categories = getUserCommunities()
-
-    return render_template('admin_community.html')
+   communityDetails = adminCommunityData()
+   for comm in communityDetails:
+        print comm
+   return render_template('admin_community.html',communityDetails=communityDetails)
 
 @app.route('/admin_post', methods = ['GET','POST'])
 def admin_post():
@@ -514,6 +516,25 @@ def joinCommunity():
     }
     return json.dumps(data)
 
+
+
+
+# Delete Communit modified Akhilesh
+
+@app.route('/delete_community', methods = ['POST'])
+def leaveCommunity():
+    communityID = request.form['id']
+    obj = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    data = {
+            'status':200
+        }
+    return json.dumps(data)
+
+
+
+
+# Code End 
+
 #api to join a community
 @app.route('/leave_community', methods = ['POST'])
 def leaveCommunity():
@@ -833,7 +854,7 @@ def editPost(id):
 #     communityNames = []
 #     for obj in userModObj:
 
-@app.route('/community_info', methods=['GET'])
+# @app.route('/community_info', methods=['GET'])
 def adminCommunityData():
     userMod = UserModerator.query.all()
     response = []
@@ -855,8 +876,7 @@ def adminCommunityData():
         "creation_date" : creation_date
         }
         response.append(data)
-    return json.dumps(response)
-    # return response
+    return response
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
