@@ -605,12 +605,11 @@ def getCommunityDetailsUnjoined():
     # return json.dumps(response)
     return response
 
-#api to delete a community
-@app.route('/delete_community', methods = ['POST'])
-def deleteCommunity():
-    communityName = request.json['name']
-    communityID = Community.query.filter_by(name = communityName).first()
-    db.session.delete(communityID)
+#method to delete a community
+def deleteCommunity(communityID):
+    UserCommunity.query.filter_by(communityID = communityID).delete()
+    UserModerator.query.filter_by(communityID=communityID).delete()
+    Community.query.filter_by(ID=communityID).delete()
     db.session.commit()
 
 #api to get posts filter by user
@@ -831,7 +830,6 @@ def editPost(id):
 #     communityNames = []
 #     for obj in userModObj:
 
-@app.route('/community_info', methods=['GET'])
 def adminCommunityData():
     userMod = UserModerator.query.all()
     response = []
@@ -853,8 +851,7 @@ def adminCommunityData():
         "creation_date" : creation_date
         }
         response.append(data)
-    return json.dumps(response)
-    # return response
+    return response
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
