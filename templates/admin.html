@@ -1,5 +1,5 @@
 
-{% extends "base.html" %}
+{% extends "_base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block page_content %}
@@ -66,7 +66,7 @@
                       <tr>
                         <td> {{ user.firstname }} {{ user.lastName }}</td>
                         <td>{{ user.email }} </td>
-                        <td>{{ user.joining_date}} </td>
+                        <td> {{ moment(user.joining_date).format('LLLL') }} </td>
                       </tr>
                        {% endfor %}
                     </table>

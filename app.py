@@ -149,6 +149,8 @@ def admin_users():
 
 @app.route('/admin_community', methods = ['GET','POST'])
 def admin_community():
+   # categories = getUserCommunities()
+
     return render_template('admin_community.html')
 
 @app.route('/admin_post', methods = ['GET','POST'])
