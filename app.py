@@ -843,15 +843,18 @@ def adminCommunityData():
         lastName = userObj.lastName
         communityObj = Community.query.filter_by(ID = communityID).first()
         communityName = communityObj.name
+        creation_date = communityObj.creation_date
         data = {
         "username" : username,
         "communityID" : communityID,
         "firstName" : firstName,
         "lastName" : lastName,
-        "communityName" : communityName
+        "communityName" : communityName,
+        "creation_date" : creation_date
         }
         response.append(data)
     return json.dumps(response)
+    # return response
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
