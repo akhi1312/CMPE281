@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError, TextAreaField, SubmitField
 from wtforms.validators import InputRequired, Email, Length, NumberRange, DataRequired, Regexp
-
+from flask_pagedown.fields import PageDownField
 
 class LoginForm(FlaskForm):
     """User Login Form"""
@@ -54,9 +54,31 @@ class ArticleForm(FlaskForm):
         self.category.choices = categories
         
     title = StringField('Title', validators=[DataRequired(),Length(min=1, max=256)])
-    body = TextAreaField('Content', validators=[DataRequired(),Length(max=256)])
-    category = SelectField('Category:',coerce=int,validators=[DataRequired()])
+    body = PageDownField("What's on your mind?", validators=[DataRequired()])
+    # body = TextAreaField('Content', validators=[DataRequired(),Length(max=256)])
+    category = SelectField('Category:',coerce=int)
     submit = SubmitField('Post')
+
+
+# Post Form Class
+class EditArticleForm(FlaskForm):
+    def __init__(self, categories, *args, **kwargs):
+        super(EditArticleForm, self).__init__(*args, **kwargs)
+        self.category.choices = categories
+
+    title = StringField('Title', validators=[DataRequired(), Length(min=1, max=256)])
+    body = PageDownField("What's on your mind?", validators=[DataRequired()])
+    # body = TextAreaField('Content', validators=[DataRequired(),Length(max=256)])
+    category = SelectField('Category:', coerce=int)
+    submit = SubmitField('Edit Post')
+
+class CommentForm(FlaskForm):
+    comment = StringField('', validators=[DataRequired()])
+    submit = SubmitField('Add Comment')
+
+class ChatForm(FlaskForm):
+    msg = StringField('', validators=[DataRequired()])
+    submit = SubmitField('Send Message')
 
 
 

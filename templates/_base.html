@@ -9,6 +9,7 @@
     type="image/x-icon">
 <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}"
     type="image/x-icon">
+<link href="{{url_for('static',filename='css/main.css')}}" rel="stylesheet">
 {% endblock %}
 
 {% block scripts %}
@@ -18,7 +19,7 @@
 {% endblock %}
 
 {% block navbar %}
-<div class="navbar navbar-inverse navbard-fixed-top" role="navigation">
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle"
@@ -33,14 +34,14 @@
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
                 <li><a href="/">Profile</a></li>
-                <li><a href="/">Messages</a></li>
-                <li><a href="/">Create Community</a></li>
+                <li><a href="/messages">Messages</a></li>
+                <li><a href="/new_community">Create Community</a></li>
                 <li><a href="/">Home</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated %}
                 <li><a href="/profile">Hi {{ current_user.username }}</a></li>
-                <li><a href="{{ url_for('logout') }}">Log Out</a></li>
+                <li><a href="{{ url_for('logout') }}">Log Out <i class="fa fa-sign-out" aria-hidden="true"></i></a></li>
                 {% else %}
                 <li><a href="{{ url_for('new_user')}}"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a></li>
                 <li><a href="{{ url_for('login') }}"><i class="fa fa-user" aria-hidden="true"></i> Log In</a></li>
@@ -48,17 +49,19 @@
             </ul>
         </div>
     </div>
-</div>
+</nav>
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
+    <div class="container">
     {% for message in get_flashed_messages() %}
         <div class="alert alert-warning">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             {{ message }}
         </div>
     {% endfor %}
+    </div>
     {% block page_content %}{% endblock %}
 </div>
 {% endblock %}

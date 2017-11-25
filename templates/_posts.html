@@ -1,0 +1,38 @@
+        <ul class="posts">
+            {% for post in posts %}
+            <li class="post">
+                <div class="inline" style="display:inline-block">
+                    <a href="{{'/profile/%s'%post.author}}"> <img src="{{ post.authorImage }}" style="width: 64px; border-radius: 50%;">
+                    </a>
+                </div>
+                <div class = "inline" style="width:90%">
+                <div>
+                    <a href="{{'/profile/%s'%post.author}}">
+                        {{ post.author}}
+                    </a>
+                    <div class="post-date">
+                            {{ moment(post.posted_date).fromNow() }}
+                    </div>
+                </div>
+                <span class="post-title">{{post.title}}</span>
+                    <span class="post-category">
+                            {{post.category}}
+                    </span>
+                <div class="post-body">{{post.contentHTML | safe}}
+                        <div class="post-footer">
+                                {% if current_user.username == post.author %}
+                                <a href="{{ url_for('editPost', id=post._id) }}">
+                                    <span class="label label-primary"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</span>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('post', id=post._id) }}">
+                                    <span class="label label-default"><i class="fa fa-comments-o" aria-hidden="true"></i> Comments {{post.comments | count}}</span>
+                                </a>
+
+                        </div>
+                </div>
+                </div>
+                <div class="clearBoth"></div>
+            </li>
+            {% endfor %}
+        </ul>

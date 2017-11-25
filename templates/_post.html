@@ -1,0 +1,34 @@
+{% extends "_base.html" %}
+{% block title %}Post {{ post.title }}{% endblock %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<div class="row">
+
+    <div class="col-md-6 col-md-offset-3">
+        <div class="page-header">
+            <h1>Post</h1>
+        </div>
+        <div class="post-title">{{post.title}}</div>
+        <div class="post-body">{{post.content | safe}}</div>
+        <div class="post-date">
+            {{ moment(post.posted_date).format('LLLL') }}
+        </div>
+        <br/>
+        <div class="pull-right post-author"><a href="{{'/profile/%s'%post.author}}"> <img src="{{ post.authorImage }}"
+                                                                                          style="width: 25px; border-radius: 50%;">
+            {{post.author}}</a></div>
+        <br/>
+        <h4 id="comments">Comments</h4>
+        <div class="comment-form">
+            {{ wtf.quick_form(commentForm) }}
+        </div>
+        {% include '_comments.html' %}
+        <div class="post-footer">
+            <a href="{{ url_for('home') }}">
+                <span class="label label-default">Return</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

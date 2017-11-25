@@ -1,0 +1,121 @@
+{% extends "_base.html" %}
+{% block title %}Join/Leave Communities{% endblock %}
+{% block page_content %}
+<div class="container" style="text-align:center">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Communitites to Join</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-striped table-hover" style="text-align: center">
+                        {% if unjoined %}
+                        <tr>
+                            <th align="center">Name</th>
+                            <th align="center">Admin</th>
+                            <th align="center">Number of Members</th>
+                            <th align="center">Created</th>
+                            <th align="center">Join Community</th>
+                        </tr>
+
+                        {% for community in unjoined %}
+                        <tr>
+                            <td>{{community.name}}</td>
+                            <td>
+                                {{community.moderator}}
+                            </td>
+                            <td>{{community.users}}</td>
+                            <td>{{community.creation_date}}</td>
+                            <td>
+                                <a data-id={{community.id}} class="btn btn-success" onclick="Join(this)">Join</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                            <tr>
+                                <p>There is not any community you have not joined. So now create one more.</p>
+                            </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                <hr/>
+                <div class="panel-heading">
+                    <h3 class="panel-title">Communitites to Leave</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-striped table-hover" style="text-align: center">
+                        {% if joined %}
+                        <tr>
+                            <th align="center">Name</th>
+                            <th align="center">Admin</th>
+                            <th align="center">Number of Members</th>
+                            <th align="center">Created</th>
+                            <th align="center">Leave Community</th>
+                        </tr>
+
+                        {% for community in joined %}
+                        <tr>
+                            <td>{{community.name}}</td>
+                            <td>
+                                {{community.moderator}}
+                            </td>
+                            <td>{{community.users}}</td>
+                            <td>{{community.creation_date}}</td>
+                            <td>
+                                <a data-id={{community.id}} class="btn btn-danger" onclick="Leave(this)">Leave</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            You are not a member of any community.
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            <div class="pull-right"><a href="/home"> Return </a></div>
+        </div>
+    </div>
+</div>
+<script>
+     function Join(elm) {
+         console.log($(elm).attr('data-id'))
+         $.ajax({
+             url: '/join_community',
+             data: {
+                 id: $(elm).attr('data-id')
+             },
+             type: 'POST',
+             success: function (res) {
+                 var response = $.parseJSON(res)
+                 if(response.status == 200)
+                     location.reload()
+             },
+             error: function (error) {
+                 console.log(error);
+             }
+         });
+     }
+         function Leave(elm) {
+             console.log($(elm).attr('data-id'))
+             $.ajax({
+                 url: '/leave_community',
+                 data: {
+                     id: $(elm).attr('data-id')
+                 },
+                 type: 'POST',
+                 success: function (res) {
+                     var response = $.parseJSON(res)
+                     if(response.status == 200)
+                         location.reload()
+                 },
+                 error: function (error) {
+                     console.log(error);
+                 }
+             });
+         }
+
+</script>
+{%endblock%}

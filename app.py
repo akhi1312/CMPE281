@@ -3,7 +3,7 @@ from flask_moment import Moment
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm ,EditForm
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm
 from index import app, db, mongo,logger
 from models import Community, User
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -21,10 +21,20 @@ from flask_httpauth import HTTPBasicAuth
 from awsServices import send_email, sendMessage
 from flask_mail import Mail,Message
 from threading import Thread
+from flask_pagedown import PageDown
+
+from bson.objectid import ObjectId  
+
+from markdown import markdown
+import bleach
+
+
+
 
 auth = HTTPBasicAuth()
 import pprint
 
+pagedown = PageDown()
 app = Flask(__name__)
 moment = Moment(app)
 Bootstrap(app)
@@ -38,14 +48,24 @@ login_manager.login_view = 'login'
 app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_USERNAME'] = 'socialnetwork281@gmail.com'
+app.config['MAIL_PASSWORD'] = 'Cmpe@281'
+app.config['MAIL_DEBUG'] = True
 
 app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[SocialNetwork]'
-app.config['FLASKY_MAIL_SENDER'] = 'Admin <socialnetwork@gmail.com>'
-app.config['FLASKY_ADMIN'] = os.environ.get('FLASKY_ADMIN')
-
+app.config['FLASKY_MAIL_SENDER'] = 'Admin <socialnetwork281@gmail.com>'
+app.config['SOCIALNETWORK_ADMIN'] = 'socialnetwork281@gmail.com'
+pagedown.init_app(app)
 mail = Mail(app)
+
+
+listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
+
+allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p']
+def convertIntoHTML(value):                        
+    return bleach.linkify(bleach.clean(markdown(value, output_format='html'),tags=allowed_tags, strip=True))
 
 def send_async_email(app, msg):
     with app.app_context():
@@ -67,25 +87,29 @@ def send_email(to, subject, template, **kwargs):
 @login_required
 def confirm(token):
     print token
-    # if current_user.confirmed:
-    #     return redirect(url_for('home'))
-    # if current_user.confirm(token):
-    #     db.session.commit()
-    #     flash('You have confirmed your account. Thanks!')
-    # else:
-    #     flash('The confirmation link is invalid or has expired.')
+    if current_user.status == 'approved':
+        return redirect(url_for('home'))
+    if current_user.confirm(token):
+        db.session.commit()
+        flash('You have confirmed your account. Thanks!')
+    else:
+        flash('The confirmation link is invalid or has expired.')
     return redirect(url_for('home'))
 
 @app.before_request
 def before_request():
-    # if current_user.is_authenticated \
-    #         and not current_user.confirmed:
+    print request.endpoint
+    if current_user.is_authenticated \
+            and current_user.status != 'approved'\
+            and request.endpoint not in listOfAuthAPIs \
+            and request.endpoint != 'static':
         return redirect(url_for('unconfirmed'))
 
 @app.route('/unconfirmed')
 def unconfirmed():
-    if current_user.confirmed:
-        return redirect(url_for('index'))
+    print current_user.status
+    if current_user.status == 'approved' or current_user.is_anonymous:
+        return redirect(url_for('home'))
     return render_template('_unconfirmed.html')
 
 @app.route('/confirm')
@@ -93,7 +117,7 @@ def unconfirmed():
 def resend_confirmation():
     token = current_user.generate_confirmation_token()
     send_email(current_user.email, 'Confirm Your Account',
-               'auth/email/confirm', user=current_user, token=token)
+               '_confirmemail', user=current_user, token=token)
     flash('A new confirmation email has been sent to you by email.')
     return redirect(url_for('home'))
 
@@ -164,7 +188,7 @@ def new_community():
         subject = 'New Community '+ name + ' acceptance mail.'
         # send_email(message, subject)
         # sendMessage(current_user.contact_number,current_user.username, name)
-        flash('Community ' + name + 'has been created. Waiting for admin approval.' )
+        flash('Community ' + name + ' has been created. Waiting for admin approval.' )
         return redirect(url_for('home'))
     return render_template('_newCommunity.html',form=form)
 
@@ -198,8 +222,8 @@ def new_user():
             return render_template('_signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
-        if app.config['FLASKY_ADMIN']:
-            send_email(app.config['FLASKY_ADMIN'], ' New User',
+        if app.config['SOCIALNETWORK_ADMIN']:
+            send_email(app.config['SOCIALNETWORK_ADMIN'], ' New User',
                        '_newuser', user=new_user)
             token = new_user.generate_confirmation_token()
             send_email(new_user.email, 'Confirm Your Account',
@@ -211,32 +235,60 @@ def new_user():
 
 #add new post
 @app.route('/add_post', methods = ['POST'])
-# def add_post(category,title,content):
-def add_post():
+def add_post(category,title,content,content_html):
     posts = mongo.posts
+    impagePath = None
+    if not current_user.imageUrl:
+        impagePath = current_user.gravatar()
+    else:
+        impagePath = current_user.imageUrl    
     post_data = {
-        'category':request.json['category'].lower(),
-        'title': request.json['title'],
-        'content': request.json['content'],
+        'category':category.lower(),
+        'title': title,
+        'content': content,
+        'contentHTML': content_html,
         'author': current_user.username,
-        'posted_date': datetime.datetime.now(),
+        'authorImage': impagePath,
+        'posted_date': datetime.datetime.utcnow(),
         'comments': []
     }
     result = posts.insert_one(post_data)
-    return ('One post: {0}'.format(result.inserted_id))
+    print 'One post: {0}'.format(result.inserted_id)
 
 @app.route('/messages',methods=['GET'])
 def messages():
     friends = getUserFriends()
     for friend in friends:
         print friend
-    return render_template('messages.html', members = friends)
+    return render_template('messages.html', members = friends, selectedUser = None)
+
+@app.route('/messages/<username>',methods=['GET', 'POST'])
+def retrieveMessagesOfUser(username):
+    print username
+    form = ChatForm()
+    if form.validate_on_submit():
+        print form.msg.data
+        msg = form.msg.data
+        add_message(username,msg)
+        form.msg.data = ''
+    friends = getUserFriends()
+    convos = get_messages(current_user.username,username)
+    for friend in friends:
+        print friend
+    return render_template('messages.html', members=friends, form = form, selectedUser = username, conversations = convos )
+
+@app.route('/sendmessages', methods=['POST'])
+def saveMessage():
+    print "here"
+    msg = request.form['msg']
+    print msg
+    return render_template('messages.html', message = msg, timestamp = datetime.datetime.utcnow())
 
 @app.route('/joincommunity',methods=['GET'])
 def listOfCommunitites():
     joinedCommunities = getCommunityDetailsJoined()
     unjoinedCommunities = getCommunityDetailsUnjoined()
-    return render_template('joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
+    return render_template('_joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -245,7 +297,6 @@ def add_post_comment():
     {"_id": request.json['_id']},
     {"$push": {
         'comments': {
-            'author': { 'name': request.json['name']},
                     'posted': datetime.datetime.now(),
                     'text': request.json['text']
                 }
@@ -254,19 +305,38 @@ def add_post_comment():
     )
     return ("Comment Added to post " + str(request.json['_id']))
 
+def msg_to_json(recipient, msg):
+    message_data = {
+        'fromUserId': recipient,
+        'msg': msg,
+        'toUserId': current_user.username,
+        'message_date': datetime.datetime.utcnow()
+    }
+    return message_data
 #add message
-@app.route('/add_message', methods = ['POST'])
-def add_message():
+# @app.route('/add_message', methods = ['POST'])
+def add_message(recipient, msg):
     messages = mongo.messages
     message_data = {
-        'fromUserId':request.json['fromUserId'],
-        'subject': request.json['subject'],
-        'content': request.json['content'],
-        'toUserId': request.json['toUserId'],
-        'message_date': datetime.datetime.now()
+        'fromUserId':current_user.username,
+        'msg': msg,
+        'toUserId': recipient,
+        'message_date': datetime.datetime.utcnow()
     }
     result = messages.insert_one(message_data)
-    return ('One message: {0}'.format(result.inserted_id))
+    print 'One message: {0}'.format(result.inserted_id)
+
+def get_messages(person1, person2):
+    listOfConversations = []
+    messages = mongo.messages.find({'fromUserId':person1, 'toUserId':person2})
+    for message in messages:
+        listOfConversations.append(message)
+    replies = mongo.messages.find({'fromUserId': person2, 'toUserId': person1})
+    for reply in replies:
+        listOfConversations.append(reply)
+    listOfConversations.sort(key=lambda r: r['message_date'], reverse=True)
+    return listOfConversations
+
 
 #add complaint
 @app.route('/add_complaint', methods = ['POST'])
@@ -296,20 +366,24 @@ def get_all_community():
 def home():
     categories = getUserCommunities()
     categories.append((0,'General'))
-    form = ArticleForm(categories)
+    form = ArticleForm(categories, category=0)
     display_posts = getPostsByUser()
     communities = getUserCommunities()
     if form.validate_on_submit():
+        print 'inside add post'
         title = form.title.data
         # body = form.body.data.split('<p>')[1].split('</p>')[0]
         body = form.body.data
+        content_html = convertIntoHTML(body)
+        print body
+        print form.category.data
         category = dict(categories).get(form.category.data)
-        add_post(category,title,body)
+        add_post(category,title,body,content_html)
         form.title.data = ""
         form.body.data = ""
         form.category.data = ""
         display_posts = getPostsByUser()
-    return render_template('userdashboard.html',form=form, posts = display_posts, communities = communities)
+    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities)
 
 @app.before_request
 def before_request():
@@ -329,7 +403,7 @@ def profilefrnd(username):
 def profile():
     username = session['username']
     userposts = mongo.posts.find({ "author": username })
-    userFriends = getUserFriends();
+    userFriends = getUserFriends()
     user = User.query.filter_by(username=username).first()
     for friends in userFriends:
         print friends
@@ -364,6 +438,8 @@ def login():
                 session['loggedIn'] = True
                 session['username'] = user.username
                 flash('You have successfully logged In')
+                print user.status
+                print current_user.status
                 return redirect(url_for('home'))
             else:
                 flash('password is incorrect')
@@ -405,25 +481,25 @@ def getRequestedCommunity():
     communityObj = Community.query.filter_by(status = 'requested').all()
     communityList = []
     for item in communityObj:
-        communityList.append(item.name)
-    return json.dumps(communityList)
+        communityList.append(item)
+    return communityList
 
 #api to approve a requested community
-@app.route('/approve_community', methods = ['POST'])
-def approveCommunity():
-    communityName = request.json['name'].lower()
-    communityDetails = Community.query.filter_by(name = communityName).first()
-    communityID = communityDetails.ID
+@app.route('/approve_community/<communityId>', methods = ['GET'])
+def approveCommunity(communityId):
+    # communityName = request.json['name'].lower()
+    # communityDetails = Community.query.filter_by(name = communityName).first()
+    communityDetails = Community.query.filter_by(ID=communityId).first()
     created_by = communityDetails.created_by
     user_comm = UserCommunity(userID=created_by,
-                        communityID=communityID)
-    user_mod = UserModerator(communityID=communityID,
+                        communityID=communityId)
+    user_mod = UserModerator(communityID=communityId,
     moderator=created_by)
     communityDetails.status = 'Approved'
     db.session.add(user_comm)
     db.session.add(user_mod)
     db.session.commit()
-    return '<h1>Community Approved</h1>'
+    return redirect(url_for('adminToApprove'))
 
 #api to join a community
 @app.route('/join_community', methods = ['POST'])
@@ -565,8 +641,8 @@ def getPostsByUser():
             response.append(doc)
     response.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in response:
-        post['posted_date'] = str(post['posted_date']).split(".")[-2]
         post['_id'] = str(post['_id'])
+        print post['authorImage']
     return response
 
 #api to get the statistics
@@ -625,18 +701,17 @@ def community(community_id):
         postFinal.append(post)
     postFinal.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in postFinal:
-        post['posted_date'] = str(post['posted_date'])
         post['_id'] = str(post['_id'])
     moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
     response = {
     "communityObj" : communityObj,
     "posts" : postFinal,
     "moderator" : moderator,
-    "creation_date" : str(communityObj.creation_date).split(" ")[0],
+    "creation_date" : communityObj.creation_date,
     "users" : users
     }
     print response['users']
-    return render_template('community.html',communityObj = response['communityObj'],posts = response['posts'], moderator = response['moderator'],
+    return render_template('_community.html',communityObj = response['communityObj'],posts = response['posts'], moderator = response['moderator'],
     date = response['creation_date'], members = response['users'])
 
 #api to get user friends
@@ -656,31 +731,114 @@ def getUserFriends(username = None):
     friendList = friends - current
     response = []
     obj = User.query.filter(User.username.in_(friendList))
-    for item in obj:
-        data = {
-        "username" : item.username,
-        "firstName" : item.firstName,
-        "lastName" : item.lastName
-        }
-        response.append(data)
-    return response
-
+    # for item in obj:
+    #     data = {
+    #     "username" : item.username,
+    #     "firstName" : item.firstName,
+    #     "lastName" : item.lastName
+    #     }
+    #     response.append(data)
+    # return response
+    return obj
 @app.route('/delete_user', methods = ['POST'])
 def deleteUser():
     userID = request.json['userID']
     userCommObj = UserCommunity.query.filter_by(userID=userID).all()
     moderator = UserModerator.query.filter_by(userID).all()
-    if moderator not None:
-        # flash("Delete user from moderator list")
-    if userCommObj is not:
+    if moderator is not None:
+        flash("Delete user from moderator list")
+    if userCommObj is not None:
         for item in userCommObj:
             UserCommunity.query.filter_by(communityID=item.communityID, userID=userID).delete()
             db.session.commit()
 
-def admin():
-    userModObj = UserModerator.query.all()
-    communityNames = []
-    for obj in userModObj:
+
+@app.route('/requestedCommunities')
+def adminToApprove():
+    listOfRequestedCommunitites = getRequestedCommunity()
+    for item in listOfRequestedCommunitites:
+        print item
+    return render_template('_requestedCommunity.html', requestedCommunities = listOfRequestedCommunitites)
+
+@app.route('/post/<id>', methods=['GET','POST'])
+def post(id):
+    form = CommentForm()
+    if form.validate_on_submit():
+        if form.comment.data:
+            impagePath = None
+            if not current_user.imageUrl:
+                impagePath = current_user.gravatar()
+            else:
+                impagePath = current_user.imageUrl
+            mongo.posts.update_one(
+            {"_id": ObjectId(str(id))},
+            {"$push": {
+                'comments': {
+                    'author': { 'name': current_user.username, 'imageUrl' : impagePath},
+                    'posted': datetime.datetime.utcnow(),
+                    'text': form.comment.data,
+                    'disabled': False
+                        }
+                    }
+                }
+            )
+            form.comment.data = ''
+            flash('Your comment has been added')
+    _id = str(id)
+    post = mongo.posts.find_one({ "_id": ObjectId(_id) })
+    return render_template('_post.html', post=post, commentForm=form)
+
+
+@app.route('/editpost/<id>', methods=['GET', 'POST'])
+@login_required
+def editPost(id):
+    _id = str(id)
+    post = mongo.posts.find_one({ "_id": ObjectId(_id) })
+    categories = getUserCommunities()
+    categories.append((0,'General'))
+    name = post['category']
+    category = Community.query.filter_by(name=name).first()
+    if category:
+        categoryId = category.ID
+    else:
+        categoryId = 0
+    form = EditArticleForm(categories,category=categoryId)
+    if form.validate_on_submit():
+        title = form.title.data
+        body = form.body.data
+        content_html = convertIntoHTML(body)
+        category = dict(categories).get(form.category.data)
+        print body
+        post['title'] = title
+        post['conntent'] = body
+        post['contentHTML'] = content_html
+        post['category'] = category
+        flash('The post has been updated.')
+        # Below route need to be changed..
+        mongo.posts.update_one({
+              '_id': post['_id']
+            },{
+              '$set': {
+                'title': title,
+                'content': body,
+                'contentHTML': content_html,
+                'category':category,
+                'posted_date':datetime.datetime.utcnow()
+              }
+            }, upsert=False)
+        flash('Your post has been updated')
+        return redirect(url_for('home'))
+    form.title.data = post['title']
+    form.body.data = post['content']
+    return render_template('_editPost.html', form=form, id = id)
+
+# def admin():
+#     userModObj = UserModerator.query.all()
+#     communityNames = []
+#     for obj in userModObj:
+
+
+
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)

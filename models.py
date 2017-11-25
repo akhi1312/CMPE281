@@ -2,7 +2,8 @@ from index import db
 from passlib.apps import custom_app_context as pwd_context
 from flask_login import UserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask import current_app
+from flask import current_app, request
+import hashlib
 
 class Community(db.Model):
     __tablename__ = 'community'
@@ -31,6 +32,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(60), index=True, unique=False)
     status = db.Column(db.String(60), index=True, default="requested")
 
+
     def hash_password(self, password):
         self.password = pwd_context.encrypt(password)
 
@@ -52,9 +54,27 @@ class User(UserMixin, db.Model):
             return False
         if data.get('confirm') != self.username:
             return False
-        self.confirmed = True
+        self.status = "approved"
         db.session.add(self)
         return True
+
+    def setImage(self, imagePath):
+        self.imageUrl = imagePath 
+
+    def gravatar_hash(self):
+        return hashlib.md5(self.username.lower().encode('utf-8')).hexdigest()
+
+    def gravatar(self, size=100, default='identicon', rating='g'):
+        if self.imageUrl:
+            return self.imageUrl
+        else:
+            if request.is_secure:
+                url = 'https://secure.gravatar.com/avatar'
+            else:
+                url = 'http://www.gravatar.com/avatar'
+            hash = self.gravatar_hash()
+            return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
+                url=url, hash=hash, size=size, default=default, rating=rating)
 
 class UserModerator(db.Model):
     __tablename__ = 'user_moderator'

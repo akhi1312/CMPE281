@@ -1,0 +1,104 @@
+{% extends "_base.html" %}
+{% block title %}{{ current_user.username }}'s dashboard{% endblock %} 
+{% import "bootstrap/wtf.html" as wtf %}
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}
+{% block page_content %} {% from "includes/_formhelpers.html" import render_field %}
+<div class="row" style="padding-left:5px">
+    <div class="col-md-3 col-xs-4 " style="text-align:center;padding-right:0px;">
+        <div class="affix">
+            <img src={{current_user.gravatar(size=256)}} alt="John" style="width:25%; border-radius: 50%; margin:auto;">
+            <h3>{{current_user.username}}</h3>
+            {% if current_user.aboutMe %}
+            <h6>{{ current_user.aboutMe }}</h6>
+            {% endif %}
+            <br/>
+            <div>
+                <a class="btn btn-primary" href="/joincommunity">Join / Leave Community</a>
+            </div>
+            <br/>
+            <div>
+                <a class="btn btn-success" href="/new_community">Create Community</a>
+            </div>
+            <br/>
+            <div>
+                List of Joined Communities:
+                <hr/>
+                <ul class="listCommunities">
+                    {% for community in communities %}
+                    <li class="btntype">
+                        <a href={{'/community/%s'%community[0]}}>{{community[1]}}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8 col-xs-8" style="border-left: 1px solid">
+        <form method="POST" action="/home" style="border: 1px solid black; padding:5px 10px; margin:5px 0px;overflow:hidden;">
+            <div class="form-group">
+                {{form.hidden_tag()}} {{render_field(form.title, class="form-control")}}
+            </div>
+            <div class="row">
+                <div class="col-md-10">
+                    <div class="form-group">
+                        {{render_field(form.body, class="form-control")}}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="row">
+                        {{wtf.form_field(form.category)}}
+                    </div>
+                    <div class="row">
+                        <button class="btn btn-md btn-primary btn-block" style="width: 88%">Post</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <hr/>
+        <ul class="posts">
+            {% for post in posts %}
+            <li class="post">
+                <div class="inline" style="display:inline-block">
+                    <a href="{{'/profile/%s'%post.author}}"> <img src="{{ post.authorImage }}" style="width: 64px; border-radius: 50%;">
+                    </a>
+                </div>
+                <div class = "inline" style="width:90%">
+                <div>
+                    <a href="{{'/profile/%s'%post.author}}">
+                        {{ post.author}}
+                    </a>
+                    <div class="post-date">
+                            {{ moment(post.posted_date).fromNow() }}
+                    </div>
+                </div>
+                <span class="post-title">{{post.title}}</span>
+                    <span class="post-category">
+                            {{post.category}}
+                    </span>
+                <div class="post-body">{{post.contentHTML | safe}}
+                        <div class="post-footer">
+                                {% if current_user.username == post.author %}
+                                <a href="{{ url_for('editPost', id=post._id) }}">
+                                    <span class="label label-primary"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</span>
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('post', id=post._id) }}">
+                                    <span class="label label-default"><i class="fa fa-comments-o" aria-hidden="true"></i> Comments {{post.comments | count}}</span>
+                                </a>
+
+                        </div>
+                </div>
+                </div>
+                <div class="clearBoth"></div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+</div>
+
+{% endblock %}

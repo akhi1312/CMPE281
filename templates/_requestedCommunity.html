@@ -1,0 +1,78 @@
+{% extends "_base.html" %}
+{% block title %}Requested Communities{% endblock %}
+{% block page_content %}
+<div class="container" style="text-align:center">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Requested Communitites</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-striped table-hover" style="text-align: center">
+                        <tr>
+                            <th align="center">Name</th>
+                            <th align="center">Created By</th>
+                            <th align="center">Date</th>
+                            <th align="center">Status</th>
+                        </tr>
+                        {% for community in requestedCommunities %}
+                        <tr>
+                            <td>{{community.name}}</td>
+                            <td>
+                                {{community.created_by}}
+                            </td>
+                            <td>{{moment(community.creation_date).format('LLLL')}}</td>
+                            <td>
+                                <a href = "{{'/approve_community/%s'% community.ID}}" class="btn btn-success">Approve</a>
+                                <a href = "{{'/decline_community/%s'% community.ID}}" class="btn btn-default">Decline</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+            <div class="pull-right"><a href="/home"> Return </a></div>
+        </div>
+    </div>
+</div>
+<script>
+    function Approve(elm) {
+        console.log($(elm).attr('data-id'))
+        $.ajax({
+            url: '/approve_',
+            data: {
+                id: $(elm).attr('data-id')
+            },
+            type: 'POST',
+            success: function (res) {
+                var response = $.parseJSON(res)
+                if(response.status == 200)
+                    location.reload()
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+        function Decline(elm) {
+            console.log($(elm).attr('data-id'))
+            $.ajax({
+                url: '/leave_community',
+                data: {
+                    id: $(elm).attr('data-id')
+                },
+                type: 'POST',
+                success: function (res) {
+                    var response = $.parseJSON(res)
+                    if(response.status == 200)
+                        location.reload()
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+</script>
+{%endblock%}

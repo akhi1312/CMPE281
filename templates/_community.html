@@ -1,0 +1,43 @@
+{% extends "_base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %}
+<div class="row">
+    <div class="col-md-3 sidebar-nav-fixed d-flex justify-content-center">
+        <div class="affix">
+            <div class="card">
+                <img src="../static/images/avatar.png" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
+                <h2>{{communityObj.name}}</h2>
+                <h5>{{communityObj.description}}</h5>
+                <h6>{{communityObj.address}}</h6>
+                <h6>{{communityObj.city}} - {{communityObj.zip_code}}</h6>
+            </div>
+            <br/>
+            <div class ="communityboxcard">
+                <h4>ManagedBy: </h4><h5>{{moderator}}</h5>
+            </div>
+            <hr/>
+            <div class="communityboxcard">
+                <ul>
+                    Members:
+                    <hr/> {% for member in members %}
+                    <div class="CommunityNameCard">
+                        <li>
+                            <a href="#">{{ member }}</a>
+                        </li>
+                    </div>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="row" style="overflow: auto;">
+            {% include '_posts.html' %}
+        </div>
+    </div>
+</div>
+
+</div>
+
+
+
+{% endblock %}

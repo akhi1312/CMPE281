@@ -1,0 +1,20 @@
+<ul class="comments">
+    {% for comment in post.comments %}
+    <li class="comment">
+        <div class="comment-thumbnail">
+             <img src="{{ comment.author.imageUrl }}" style="width: 25px; border-radius: 50%;">
+        </div>
+        <div class="comment-content">
+            <div class="comment-date">{{ moment(comment.posted).fromNow() }}</div>
+            <div class="comment-author"><a href="{{'/profile/%s'%comment.author.name}}">{{ comment.author.name }}</a></div>
+            <div class="comment-body">
+                {% if comment.disabled %}
+                <p><i>This comment has been disabled by a moderator.</i></p>
+                {% else %}
+                    {{ comment.text }}
+                {% endif %}
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>

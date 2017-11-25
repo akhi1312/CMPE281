@@ -1,0 +1,115 @@
+body { padding-top: 70px; }
+
+.communityBtn{
+    display:inline-block;
+    vertical-align:middle;
+    width:20px;
+    height:15px;
+    cursor:pointer;
+    margin:20px;
+    position:absolute;
+    top:0px;
+}
+.listCommunities{
+    border: 1px solid black;
+    list-style: none;
+    padding: 1em;
+}
+
+.btntype{
+    width:100%;
+    padding: 0.5em 0;
+    border:1px solid black;
+    margin:2px 0;
+}
+
+ul.posts {
+    list-style-type: none;
+    padding: 5px;
+    margin: 5px 0px 0px 0px;
+}
+
+ul.posts li.post {
+    padding: 8px 8px 0 8px;
+    border-bottom: 1px solid #e0e0e0;
+    float: none;
+}
+
+.profile-thumbnail {
+    width:10%; 
+    border-radius: 50%;
+}
+.inline{
+    float:left;
+    margin: 0.5em;
+}
+.clearBoth { clear:both; }
+
+ul.posts li.post:hover {
+    background-color: #f0f0f0;
+}
+div.post-date {
+    float: right;
+}
+.post-title{
+    font-size: 1.5em;
+}
+.post-category {
+    float: right;
+}
+div.post-author {
+    font-weight: bold;
+}
+div.post-thumbnail {
+    position: absolute;
+}
+div.post-content {
+    margin-left: 48px;
+    min-height: 48px;
+}
+div.post-footer {
+    text-align: right;
+}
+
+ul.comments {
+    list-style-type: none;
+    padding: 0px;
+    margin: 16px 0px 0px 0px;
+}
+ul.comments li.comment {
+    margin-left: 32px;
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+}
+ul.comments li.comment:nth-child(1) {
+    border-top: 1px solid #e0e0e0;
+}
+ul.comments li.comment:hover {
+    background-color: #f0f0f0;
+}
+div.comment-date {
+    float: right;
+}
+div.comment-author {
+    font-weight: bold;
+}
+div.comment-thumbnail {
+    position: absolute;
+}
+div.comment-content {
+    margin-left: 48px;
+    min-height: 48px;
+}
+div.comment-form {
+    margin: 16px 0px 16px 32px;
+}
+
+.msg-box-sent{
+    border: 1px solid #4245f4;
+    background-color: rgb(65, 178, 244, 0.2)
+}
+
+.msg-box-received{
+    border: 1px solid #8ef441;
+    background-color: rgb(65, 244, 178, 0.2)
+}
