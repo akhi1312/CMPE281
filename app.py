@@ -23,13 +23,10 @@ from flask_mail import Mail,Message
 from threading import Thread
 from flask_pagedown import PageDown
 
-from bson.objectid import ObjectId  
+from bson.objectid import ObjectId
 
 from markdown import markdown
 import bleach
-
-
-
 
 auth = HTTPBasicAuth()
 import pprint
@@ -64,7 +61,7 @@ listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_con
 allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
                         'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
                         'h1', 'h2', 'h3', 'p']
-def convertIntoHTML(value):                        
+def convertIntoHTML(value):
     return bleach.linkify(bleach.clean(markdown(value, output_format='html'),tags=allowed_tags, strip=True))
 
 def send_async_email(app, msg):
@@ -241,7 +238,7 @@ def add_post(category,title,content,content_html):
     if not current_user.imageUrl:
         impagePath = current_user.gravatar()
     else:
-        impagePath = current_user.imageUrl    
+        impagePath = current_user.imageUrl
     post_data = {
         'category':category.lower(),
         'title': title,
@@ -397,7 +394,7 @@ def profilefrnd(username):
     user = User.query.filter_by(username=username).first()
     form = EditForm(request.form)
     return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
-    
+
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():

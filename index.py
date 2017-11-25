@@ -27,6 +27,7 @@ app.config.from_object(BaseConfig)
 Bootstrap(app)
 db = SQLAlchemy(app)
 
+
 #connecting to MongoDB
 client = MongoClient("mongodb://admin:admin@ds251845.mlab.com:51845/socialcommunity")
 mongo = client['socialcommunity']

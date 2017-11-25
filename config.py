@@ -5,3 +5,5 @@ class BaseConfig(object):
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     BASIC_AUTH_FORCE = True
     SECRET_KEY = os.urandom(32)
+    SQLALCHEMY_POOL_SIZE = 20
+    SQLALCHEMY_MAX_OVERFLOW = 100
