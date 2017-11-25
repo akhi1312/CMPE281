@@ -132,8 +132,6 @@ def test():
 def index():
     return render_template('index.html')
 
-
-
 @app.route('/admin', methods = ['GET'])
 def admin():
     adminData = getStats()
@@ -141,7 +139,6 @@ def admin():
     for user in users:
         print user
     return render_template('admin.html', adminData=adminData , users=users)
-
 
 @app.route('/admin_users', methods = ['GET','POST'])
 def admin_users():
@@ -834,8 +831,27 @@ def editPost(id):
 #     communityNames = []
 #     for obj in userModObj:
 
-
-
+@app.route('/community_info', methods=['GET'])
+def adminCommunityData():
+    userMod = UserModerator.query.all()
+    response = []
+    for obj in userMod:
+        username = obj.moderator
+        communityID = obj.communityID
+        userObj = User.query.filter_by(username = username).first()
+        firstName = userObj.firstName
+        lastName = userObj.lastName
+        communityObj = Community.query.filter_by(ID = communityID).first()
+        communityName = communityObj.name
+        data = {
+        "username" : username,
+        "communityID" : communityID,
+        "firstName" : firstName,
+        "lastName" : lastName,
+        "communityName" : communityName
+        }
+        response.append(data)
+    return json.dumps(response)
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
