@@ -364,7 +364,6 @@ def get_messages(person1, person2):
     listOfConversations.sort(key=lambda r: r['message_date'], reverse=True)
     return listOfConversations
 
-
 #add complaint
 @app.route('/add_complaint', methods = ['POST'])
 def add_complaint():
@@ -671,6 +670,10 @@ def getCommunityDetailsUnjoined():
 def deleteCommunity(communityID):
     UserCommunity.query.filter_by(communityID = communityID).delete()
     UserModerator.query.filter_by(communityID=communityID).delete()
+    communityObj = Community.query.filter_by(ID=communityID).first()
+    name = communityObj.name
+    posts = mongo.posts
+    mongo.get_collection('posts').delete_many({"category": name})
     Community.query.filter_by(ID=communityID).delete()
     db.session.commit()
 
@@ -709,8 +712,7 @@ def getStats():
     posts = post.find()
     count = 0
     for item in posts:
-        for doc in item:
-            count = count + 1
+        count = count + 1
     response = {
     "users" : users,
     "communities" : communities,
@@ -917,6 +919,39 @@ def adminCommunityData():
         }
         response.append(data)
     return response
+
+@app.route('/network', methods=['GET'])
+def getNetwork():
+    communityObj = Community.query.all()
+
+    userCommunity = UserCommunity.query.all()
+    # userCommObj =
+    communities = []
+    users = []
+    for obj in communityObj:
+        # cin[obj.ID] = obj.name
+        communities.append([obj.ID, obj.name])
+    # print (response)
+    start = 999
+    for obj in userCommunity:
+        data = {
+        "id" : start,
+        "name" : obj.userID,
+        "com" : obj.communityID
+        }
+        users.append(data)
+        start = start - 1
+
+    response = {
+    "community" : communities,
+    "user" : users
+    }
+
+    return json.dumps(response)
+
+@app.route('/graph', methods=['GET'])
+def render_graph():
+    return render_template("test.html")
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)

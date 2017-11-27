@@ -40,6 +40,38 @@
                     </table>
                 </div>
                 <hr/>
+                                <div class="panel-body">
+                    <table class="table table-striped table-hover" style="text-align: center">
+                        {% if unjoined %}
+                        <tr>
+                            <th align="center">Name</th>
+                            <th align="center">Admin</th>
+                            <th align="center">Number of Members</th>
+                            <th align="center">Created</th>
+                            <th align="center">Requested Community</th>
+                        </tr>
+
+                        {% for community in requested %}
+                        <tr>
+                            <td>{{community.name}}</td>
+                            <td>
+                                {{community.moderator}}
+                            </td>
+                            <td>{{community.users}}</td>
+                            <td>{{community.creation_date}}</td>
+                            <td>
+                                <a data-id={{community.id}} class="btn btn-success" onclick="Decline(this)">Decline Request</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                            <tr>
+                                <p>There is not any community you have requested. So now create one more.</p>
+                            </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                <hr/>
                 <div class="panel-heading">
                     <h3 class="panel-title">Communitites to Leave</h3>
                 </div>
