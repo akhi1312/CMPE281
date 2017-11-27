@@ -39,17 +39,14 @@ for (i = 0; i < response["user"].length; i++) {
     edges.push(data_admin)
 }
 
-
-
-
  var container = document.getElementById('graph');
  var data = {
   nodes: nodes,
   edges: edges,
  };
  var options = {
-     width: '800px',
-     height: '400px'
+     width: '1000px',
+     height: '800px'
  };
  var graph = new vis.Network(container, data, options);
 
