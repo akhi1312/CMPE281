@@ -535,6 +535,10 @@ def declineRequestByUser():
     communityID = request.form['id']
     UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.commit()
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
 
 #api route to
 @app.route('/reject_request/<communityId>', methods = ['POST'])
