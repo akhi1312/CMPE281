@@ -53,27 +53,76 @@
               <!-- Latest Users -->
               <div class="panel panel-default">
                 <div class="panel-heading">
-                  <h3 class="panel-title">Latest Users</h3>
+          
+                    <h3 class="panel-title">Requested Communitites</h3>
                 </div>
                 <div class="panel-body">
-                  <table class="table table-striped table-hover">
-                      <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Joined</th>
-                      </tr>
-                      {% for user in users %}
-                      <tr>
-                        <td> {{ user.firstname }} {{ user.lastName }}</td>
-                        <td>{{ user.email }} </td>
-                        <td> {{ moment(user.joining_date).format('LLLL') }} </td>
-                      </tr>
-                       {% endfor %}
+                    <table class="table table-striped table-hover" style="text-align: center">
+                        <tr>
+                            <th align="center">Name</th>
+                            <th align="center">Created By</th>
+                            <th align="center">Date</th>
+                            <th align="center">Status</th>
+                        </tr>
+                        {% for community in listOfRequestedCommunitites %}
+                        <tr>
+                            <td>{{community.name}}</td>
+                            <td>
+                                {{community.created_by}}
+                            </td>
+                            <td>{{moment(community.creation_date).format('LLLL')}}</td>
+                              <td>
+                                  <a href = "{{'/approve_community/%s'% community.ID}}" class="btn btn-success">Approve</a>
+                                  <a href = "{{'/decline_community/%s'% community.ID}}" class="btn btn-default">Decline</a>
+                              </td>
+                        </tr>
+                        {% endfor %}
                     </table>
                 </div>
-              </div>
-          </div>
+            </div>
+            <div class="pull-right"><a href="/home"> Return </a></div>
         </div>
+    </div>
+</div>
+<script>
+    function Approve(elm) {
+        console.log($(elm).attr('data-id'))
+        $.ajax({
+            url: '/approve_',
+            data: {
+                id: $(elm).attr('data-id')
+            },
+            type: 'POST',
+            success: function (res) {
+                var response = $.parseJSON(res)
+                if(response.status == 200)
+                    location.reload()
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+        function Decline(elm) {
+            console.log($(elm).attr('data-id'))
+            $.ajax({
+                url: '/leave_community',
+                data: {
+                    id: $(elm).attr('data-id')
+                },
+                type: 'POST',
+                success: function (res) {
+                    var response = $.parseJSON(res)
+                    if(response.status == 200)
+                        location.reload()
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+</script>
       </div>
     </section>
 
