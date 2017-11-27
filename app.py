@@ -15,7 +15,7 @@ import os
 import sys
 import datetime
 from index import app, db, mongo,logger
-from models import Community, User, UserCommunity, UserModerator
+from models import Community, User, UserCommunity, UserModerator, UserRequestedCommunity
 import  myexception
 from flask_httpauth import HTTPBasicAuth
 from awsServices import send_email, sendMessage
@@ -529,10 +529,10 @@ def joiningRequest():
     }
     return json.dumps(data)
 
-@app.route('/decline_request_user/<communityId>', methods = ['POST'])
-def declineRequestByUser(communityId):
+@app.route('/decline_request_user', methods = ['POST'])
+def declineRequestByUser():
     userID = current_user.username
-    communityID = communityId
+    communityID = request.form['id']
     UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.commit()
 
