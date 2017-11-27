@@ -40,9 +40,13 @@
                     </table>
                 </div>
                 <hr/>
+                <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Requested to Join Communities</h3>
+                </div>
                 <div class="panel-body">
                     <table class="table table-striped table-hover" style="text-align: center">
-                        {% if unjoined %}
+                        {% if requested %}
                         <tr>
                             <th align="center">Name</th>
                             <th align="center">Admin</th>
@@ -60,13 +64,13 @@
                             <td>{{community.users}}</td>
                             <td>{{community.creation_date}}</td>
                             <td>
-                                <a data-id={{community.id}} class="btn btn-success" onclick="DeclineRequest(this)">Request Cancel</a>
+                                <a data-id={{community.id}} class="btn btn-default" onclick="DeclineRequest(this)">Request Cancel</a>
                             </td>
                         </tr>
                         {% endfor %}
                         {% else %}
                             <tr>
-                                <p>There is not any community you have requested. So now create one more.</p>
+                                <p>You have not requested to join any community.</p>
                             </tr>
                         {% endif %}
                     </table>
@@ -152,7 +156,7 @@
          function DeclineRequest(elm){
             console.log($(elm).attr('data-id'))
              $.ajax({
-                 url: '/declineRequest',
+                 url: '/decline_request_user',
                  data: {
                      id: $(elm).attr('data-id')
                  },

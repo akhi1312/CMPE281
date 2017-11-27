@@ -15,7 +15,7 @@ import os
 import sys
 import datetime
 from index import app, db, mongo,logger
-from models import Community, User, UserCommunity, UserModerator
+from models import Community, User, UserCommunity, UserModerator, UserRequestedCommunity
 import  myexception
 from flask_httpauth import HTTPBasicAuth
 from awsServices import send_email, sendMessage
