@@ -282,7 +282,8 @@ def saveMessage():
 def listOfCommunitites():
     joinedCommunities = getCommunityDetailsJoined()
     unjoinedCommunities = getCommunityDetailsUnjoined()
-    return render_template('_joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities)
+    requestedCommunities = getCommunityDetailsRequested()
+    return render_template('_joincommunity.html',joined = joinedCommunities, unjoined = unjoinedCommunities, requested = requestedCommunities)
 
 #add comment to a post
 @app.route('/add_post_comment', methods = ['POST'])
@@ -512,6 +513,38 @@ def joinCommunity():
     return json.dumps(data)
 
 #api to join a community
+@app.route('/join_request', methods = ['POST'])
+def joiningRequest():
+    userID = current_user.username
+    communityID = request.form['id']
+    user_comm = UserRequestedCommunity(userID=userID,
+                        communityID=communityID)
+    db.session.add(user_comm)
+    db.session.commit()
+    communityName = (Community.query.filter_by(ID=communityID).first()).name
+    message = 'Hi Moderator, This is to inform that '+current_user.username+' has requested to joined '+communityName+ "community."
+    subject = 'New Member Requested to Join '+ communityName + ' community.'
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
+
+@app.route('/decline_request_user/<communityId>', methods = ['POST'])
+def declineRequestByUser(communityId):
+    userID = current_user.username
+    communityID = communityId
+    UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
+    db.session.commit()
+
+#api route to
+@app.route('/reject_request/<communityId>', methods = ['POST'])
+def rejectRequestModerator(communityId):
+    userID = current_user.username
+    communityID = communityId
+    UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
+    db.session.commit()
+
+#api to join a community
 @app.route('/leave_community', methods = ['POST'])
 def leaveCommunity():
     userID = current_user.username
@@ -575,13 +608,18 @@ def getCommunityDetailsJoined():
 def getCommunityDetailsUnjoined():
     communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     totalCommunities = Community.query.filter_by(status = 'Approved').all()
+    requestedCommunities = UserRequestedCommunity.query.filter_by(userID=current_user.username).all()
     jid = set()
     tid = set()
+    rid = set()
+    for community in requestedCommunities:
+        rid.add(community.communityID)
     for community in communities:
         jid.add(community.communityID)
     for community in totalCommunities:
         tid.add(community.ID)
-    unjoined =  tid - jid
+    unjoined_temp =  tid - jid
+    unjoined = unjoined_temp - rid
     moderators = []
     response = []
     communityObj = []
@@ -601,7 +639,35 @@ def getCommunityDetailsUnjoined():
     for i in range(0,len(moderators)):
         response[i]['moderator'] = moderators[i]
         response[i]['users'] = users[i]
-    # return json.dumps(response)
+    return response
+
+#api to get full community details for a unjoined user community
+@app.route('/user_requested_community', methods = ['GET'])
+def getCommunityDetailsRequested():
+    requestedCommunities = UserRequestedCommunity.query.filter_by(userID=current_user.username).all()
+    rid = set()
+    for community in requestedCommunities:
+        rid.add(community.communityID)
+
+    moderators = []
+    response = []
+    communityObj = []
+    users = []
+    for id in rid:
+        x = UserCommunity.query.filter_by(communityID = id).all()
+        users.append(len(x))
+        communityObj.append(Community.query.filter_by(ID = id).first())
+        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+    for obj in communityObj:
+        data = {
+        "id" : obj.ID,
+        "name" : obj.name,
+        "creation_date" : str(obj.creation_date).split(" ")[0],
+                }
+        response.append(data)
+    for i in range(0,len(moderators)):
+        response[i]['moderator'] = moderators[i]
+        response[i]['users'] = users[i]
     return response
 
 #method to delete a community
