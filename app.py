@@ -855,5 +855,38 @@ def adminCommunityData():
         response.append(data)
     return response
 
+@app.route('/network', methods=['GET'])
+def getNetwork():
+    communityObj = Community.query.all()
+
+    userCommunity = UserCommunity.query.all()
+    # userCommObj =
+    communities = []
+    users = []
+    for obj in communityObj:
+        # cin[obj.ID] = obj.name
+        communities.append([obj.ID, obj.name])
+    # print (response)
+    start = 999
+    for obj in userCommunity:
+        data = {
+        "id" : start,
+        "name" : obj.userID,
+        "com" : obj.communityID
+        }
+        users.append(data)
+        start = start - 1
+
+    response = {
+    "community" : communities,
+    "user" : users
+    }
+
+    return json.dumps(response)
+
+@app.route('/graph', methods=['GET'])
+def render_graph():
+    return render_template("test.html")
+
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
