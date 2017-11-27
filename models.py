@@ -17,6 +17,7 @@ class Community(db.Model):
     created_by = db.Column(db.String(128), db.ForeignKey('users.username'))
     status = db.Column(db.String(60), index=True, default="requested")
 
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     username = db.Column(db.String(128), primary_key=True)
