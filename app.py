@@ -386,7 +386,7 @@ def before_request():
 @login_required
 def profilefrnd(username):
     userposts = mongo.posts.find({ "author": username })
-    userFriends = getUserFriends(username);
+    userFriends = getUserFriends(username)
     user = User.query.filter_by(username=username).first()
     form = EditForm(request.form)
     return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
