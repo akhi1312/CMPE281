@@ -921,6 +921,30 @@ def adminCommunityData():
         response.append(data)
     return response
 
+@app.route('/requestedCommunities', methods=['GET'])
+def moderatorUserData():
+    current_moderator = current_user.Username
+    moderatorCommObj = UserModerator.query.filter_by(moderator=current_moderator).all()
+    communityName = []
+    moderator_communities = []
+    requested = []
+    response = []
+    for obj in moderatorCommObj:
+        moderator_communities.append(obj.commmunityID)
+    for id in moderator_communities:
+        name = Community.query.filter_by(ID=id).first().name
+        userReqObj = UserRequestedCommunity.query.filter_by(communityID=id).all()
+        if userReqObj is not None:
+            for obj in userReqObj:
+                user = User.query.filter_by(username=obj.userID).first()
+                data = {
+                "community_id" = id,
+                "community_name" = name,
+                "username" = user.username,
+                }
+                response.append(data)
+    return render_template('_requestedCommunities.html', response=response)
+
 @app.route('/network', methods=['GET'])
 def getNetwork():
     communityObj = Community.query.all()
