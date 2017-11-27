@@ -135,22 +135,54 @@ def index():
 @app.route('/admin', methods = ['GET'])
 def admin():
     adminData = getStats()
-    users = User.query.order_by(desc(User.joining_date)).limit(5).all()
-    for user in users:
-        print user
-    return render_template('admin.html', adminData=adminData , users=users)
+    listOfRequestedCommunitites = getRequestedCommunity()
+    return render_template('admin.html', adminData=adminData , listOfRequestedCommunitites=listOfRequestedCommunitites)
 
 @app.route('/admin_users', methods = ['GET','POST'])
 def admin_users():
-    return render_template('admin_users.html')
+    adminData = getStats()
+    users = User.query.order_by((User.joining_date)).all()
+    return render_template('admin_users.html',users=users , adminData=adminData )
 
 @app.route('/admin_community', methods = ['GET','POST'])
 def admin_community():
-    return render_template('admin_community.html')
+   adminData = getStats()
+   # categories = getUserCommunities()
+   communityDetails = adminCommunityData()
+   return render_template('admin_community.html',communityDetails=communityDetails, adminData=adminData )
 
 @app.route('/admin_post', methods = ['GET','POST'])
 def admin_post():
-    return render_template('admin_post.html')
+    adminData = getStats()
+    return render_template('admin_post.html',adminData=adminData)
+
+
+#edit community 
+@app.route('/admin/edit_community', methods = ['GET','POST'])
+def edit_community():
+    communityID = request.form['id']
+    communityDetails = Community.query.filter_by(ID=communityID).first()
+    print communityDetails
+    form = commuityRegistraion()
+    if form.validate_on_submit():
+        name = form.name.data.lower()
+        desc = form.desc.data
+        address = form.address.data
+        city = form.city.data
+        zip_code = form.zip_code.data
+        creation_date = datetime.datetime.now()
+        created_by = current_user.username
+        return redirect(url_for('admin_community'))
+    else:
+        form.name.data = communityDetails.name
+        form.desc.data = communityDetails.description
+        form.address.data = communityDetails.address
+        form.city.data = communityDetails.city
+        form.zip_code.data = communityDetails.zip_code
+        # form.creation_date.data = communityDetails.creation_date
+        # form.created_by.data = communityDetails.created_by
+        return redirect(url_for('edit_community.html',form=form))
+
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
@@ -493,7 +525,7 @@ def approveCommunity(communityId):
     db.session.add(user_comm)
     db.session.add(user_mod)
     db.session.commit()
-    return redirect(url_for('adminToApprove'))
+    return redirect(url_for('admin'))
 
 #api to join a community
 @app.route('/join_community', methods = ['POST'])
@@ -511,6 +543,35 @@ def joinCommunity():
         'status':200
     }
     return json.dumps(data)
+
+
+
+
+# Delete Communit modified Akhilesh
+
+@app.route('/delete_community', methods = ['POST'])
+def deleteCommunity():
+    communityID = request.form['id']
+    deleteCommunity(communityID)
+    data = {
+            'status':200
+        }
+    return json.dumps(data)
+
+@app.route('/delete_user', methods = ['POST'])
+def deleteUser():
+    userName = request.form['id']
+
+    deleteUser(userName)
+    data = {
+            'status':200
+        }
+    return json.dumps(data)
+
+
+
+
+# Code End 
 
 #api to join a community
 @app.route('/join_request', methods = ['POST'])
@@ -801,17 +862,19 @@ def getUserFriends(username = None):
     #     response.append(data)
     # return response
     return obj
-@app.route('/delete_user', methods = ['POST'])
-def deleteUser():
-    userID = request.json['userID']
-    userCommObj = UserCommunity.query.filter_by(userID=userID).all()
-    moderator = UserModerator.query.filter_by(userID).all()
-    if moderator is not None:
+
+# Below Commented by Akhilesh - Didnot understand the functnality
+
+#@app.route('/delete_user', methods = ['POST'])
+def deleteUser(userID):
+    #userID = request.json['userID']
+    moderator = UserModerator.query.filter_by(moderator=userID).all()
+    if len(moderator) != 0:
         flash("Delete user from moderator list")
-    if userCommObj is not None:
-        for item in userCommObj:
-            UserCommunity.query.filter_by(communityID=item.communityID, userID=userID).delete()
-            db.session.commit()
+    else:
+        UserCommunity.query.filter_by(userID=userID).delete()
+        User.query.filter_by(username=userID).delete()
+        db.session.commit()
 
 
 @app.route('/requestedCommunities')
@@ -897,6 +960,7 @@ def editPost(id):
 #     userModObj = UserModerator.query.all()
 #     communityNames = []
 #     for obj in userModObj:
+
 
 def adminCommunityData():
     userMod = UserModerator.query.all()
