@@ -158,31 +158,30 @@ def admin_post():
 
 
 #edit community 
-@app.route('/admin/new_community', methods = ['GET','POST'])
+@app.route('/admin/edit_community', methods = ['GET','POST'])
 def edit_community():
     communityID = request.form['id']
-    communityDetails = Community.query.filter_by(name=name).first()
-        form = EditForm(request.form)
+    communityDetails = Community.query.filter_by(ID=communityID).first()
+    print communityDetails
+    form = commuityRegistraion()
     if form.validate_on_submit():
-        print ("Inside User Updated")
-        user.email = form.email.data
-        user.contact_number = form.contact.data
-        user.firstName = form.firstname.data
-        user.lastName = form.lastname.data
-        db.session.commit()
-        print ("User Updated")
-        flash('Your changes have been saved.')
-        return redirect(url_for('profile'))
+        name = form.name.data.lower()
+        desc = form.desc.data
+        address = form.address.data
+        city = form.city.data
+        zip_code = form.zip_code.data
+        creation_date = datetime.datetime.now()
+        created_by = current_user.username
+        return redirect(url_for('admin_community'))
     else:
-        form.email.data = user.email
-        form.contact.data = user.contact_number
-        form.firstname.data = user.firstName
-        form.lastname.data = user.lastName
-        print ("Inside else User Updated")
-
-
-    
-    return render_template('_editCommunity.html')
+        form.name.data = communityDetails.name
+        form.desc.data = communityDetails.description
+        form.address.data = communityDetails.address
+        form.city.data = communityDetails.city
+        form.zip_code.data = communityDetails.zip_code
+        # form.creation_date.data = communityDetails.creation_date
+        # form.created_by.data = communityDetails.created_by
+        return redirect(url_for('edit_community.html',form=form))
 
 
 #create new community
