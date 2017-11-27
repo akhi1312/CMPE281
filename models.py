@@ -59,7 +59,7 @@ class User(UserMixin, db.Model):
         return True
 
     def setImage(self, imagePath):
-        self.imageUrl = imagePath 
+        self.imageUrl = imagePath
 
     def gravatar_hash(self):
         return hashlib.md5(self.username.lower().encode('utf-8')).hexdigest()
@@ -83,6 +83,11 @@ class UserModerator(db.Model):
 
 class UserCommunity(db.Model):
     __tablename__ = 'user_community'
+    userID = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
+    communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), primary_key=True)
+
+class UserRequestedCommunity(db.Model):
+    __tablename__ = 'user_requested_community'
     userID = db.Column(db.String(128), db.ForeignKey('users.username'), primary_key=True)
     communityID = db.Column(db.Integer, db.ForeignKey('community.ID'), primary_key=True)
 
