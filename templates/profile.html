@@ -9,7 +9,7 @@
   
   <div id="w">
     <div id="content" class="clearfix">
-      <div id="userphoto"><img src="../static/images/avatar.png" alt="default avatar"  width="100px" height="100px"></div>
+      <div id="userphoto"><img src={{current_user.gravatar(size=256)}} alt="default avatar"  width="100px" height="100px"></div>
       <span><h1>{{user.firstName.capitalize()}} </h1> </span>
  
 
@@ -50,8 +50,13 @@
         <p >@{{post.posted_date}} -  {{post.title}}</p>
         <p> {{post.content}}</p>
         </div>
-        {% endfor %}
-      </section>
+        {% else %}
+        <div class="activity">
+          <br>
+        <p> User have no recent activity to show </p>
+        </div>
+          {% endfor %}
+          </section>
       
       <section id="friends" class="hidden">
 
@@ -59,7 +64,7 @@
         <p>Friends list:</p>
         {% for friends in userFriends %}
         <ul id="friendslist" class="clearfix">
-          <li><a href="{{'/profile/%s'% friends.username}}"><img src="../static/images/avatar.png" width="22" height="22"> {{ friends.firstName}} {{friends.lastName}}</a></li>
+          <li><a href="{{'/profile/%s'% friends.username}}"><img src={{friends.gravatar(size=256)}} width="22" height="22"> {{ friends.firstName}} {{friends.lastName}}</a></li>
         </ul> 
          {% endfor %}
       </section>

@@ -154,26 +154,28 @@ def admin_community():
 @app.route('/admin_post', methods = ['GET','POST'])
 def admin_post():
     adminData = getStats()
-    return render_template('admin_post.html',adminData=adminData)
+    listOfPost = mongo.posts.find({})
+   
+    return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost)
 
 
 #edit community 
-@app.route('/admin/edit_community', methods = ['GET','POST'])
-def edit_community():
-    communityID = request.form['id']
+@app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
+def edit_community(community_id):
+    communityID = int(community_id)
+    print "Printing Comuity"
     communityDetails = Community.query.filter_by(ID=communityID).first()
-    print communityDetails
     form = commuityRegistraion()
     if form.validate_on_submit():
-        name = form.name.data.lower()
-        desc = form.desc.data
-        address = form.address.data
-        city = form.city.data
-        zip_code = form.zip_code.data
-        creation_date = datetime.datetime.now()
-        created_by = current_user.username
+        communityDetails.name = form.name.data.lower()
+        communityDetails.desc = form.desc.data
+        communityDetails.address = form.address.data
+        communityDetails.city = form.city.data
+        communityDetails.zip_code = form.zip_code.data
+        db.session.commit()
         return redirect(url_for('admin_community'))
     else:
+        communityDetails = Community.query.filter_by(ID=communityID).first()
         form.name.data = communityDetails.name
         form.desc.data = communityDetails.description
         form.address.data = communityDetails.address
@@ -181,7 +183,7 @@ def edit_community():
         form.zip_code.data = communityDetails.zip_code
         # form.creation_date.data = communityDetails.creation_date
         # form.created_by.data = communityDetails.created_by
-        return redirect(url_for('edit_community.html',form=form))
+        return render_template('_edit_community.html',form=form ,column = communityID)
 
 
 #create new community
@@ -553,6 +555,16 @@ def joinCommunity():
 def deleteCommunity():
     communityID = request.form['id']
     deleteCommunity(communityID)
+    data = {
+            'status':200
+        }
+    return json.dumps(data)
+
+@app.route('/delete_post', methods = ['POST'])
+def deletePost():
+    postId = request.form['id']
+    print postId
+    mongo.posts.remove( {"_id" : ObjectId(str(postId)) } )
     data = {
             'status':200
         }

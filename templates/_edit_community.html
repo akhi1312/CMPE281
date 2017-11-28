@@ -8,7 +8,7 @@
         <div class="page-header">
             <h1>Create New Community</h1>
         </div>
-        <form method="POST" action="/new_community">
+        <form method="POST" action="/admin/edit_community/{{ column }}">
             {{form.hidden_tag()}}
             {{wtf.form_field(form.name)}}
             {{wtf.form_field(form.desc)}}
@@ -16,10 +16,10 @@
             {{wtf.form_field(form.city)}}
             {{wtf.form_field(form.zip_code)}}
             <div class="row">
-              <div class="col-md-6"> <a class="btn btn-danger btn-block" href="/home">Cancel</a>
+              <div class="col-md-6"> <a class="btn btn-danger btn-block" href="/admin_community">Cancel</a>
             </div>
             <div class="col-md-6">
-              <button class = "btn btn-md btn-primary btn-block" type="submit">Add</button>
+              <button class = "btn btn-md btn-primary btn-block" type="submit">Update</button>
             </div>
           </div>
         </form>
