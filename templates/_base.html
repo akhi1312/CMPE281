@@ -49,6 +49,9 @@
                 <li><a href="/profile">Profile</a></li>
                 <li><a href="/messages">Messages</a></li>
                 <li><a href="/new_community">Create Community</a></li>
+                {% if g.user.role == 'moderator' %}
+                <li><a href="/messageToOtherModerator">Inter Community</a></li>
+                {% endif %}
                 <li><a href="/">Home</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -69,7 +72,7 @@
 <div class="container-fluid">
     <div class="container">
     {% for message in get_flashed_messages() %}
-        <div class="alert alert-warning">
+        <div class="alert alert-warning" id="flashMessage">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             {{ message }}
         </div>
@@ -77,4 +80,9 @@
     </div>
     {% block page_content %}{% endblock %}
 </div>
+<script>
+     setTimeout(function() {
+            $('#flashMessage').fadeOut('fast');
+            }, 3000);
+</script>
 {% endblock %}

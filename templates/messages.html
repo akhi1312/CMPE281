@@ -32,33 +32,49 @@ Select a Friend to Message
         </form>
         </div>
         <hr/>
-        <div class="row">
+
             {% for message in conversations %}
-            <div>
+            <div class="row" style="margin-left:2px" >
                 {% if message['fromUserId'] == current_user.username %}
-                <div class = "msg-box-sent">
+                 <!--  <div class="message pull-right" > -->
+                    <div class="pull-right">
+
+                    <div class="message " style="padding-left:50px;margin: 0 0 5px 0;background-color:rgba(0,0,255,0.2);">
+                     <p>{{message['msg']}}</p>
+                     <span style="text-align:right;">{{ moment(message['message_date']).fromNow()}}</span>
+                  </div>
+              </div>
+
+               <!--  <div class = "msg-box-sent">
                     <p class = "pull-right">
                         {{message['msg']}}
                     </p>
                     <p class="pull-right">
                         {{ moment(message['message_date']).fromNow() }} By {{message['fromUserId']}}
                     </p>
-                </div>
+                </div> -->
                 {% else %}
-                <div class = "msg-box-received">
+                <!-- <div class="message pull-left"> -->
+                  <div class="pull-left">
+
+                    <div class="message " style="background-color:rgba(0,0,255,0.2);padding-right:50px;margin: 0 0 5px 0;">
+                     <p>{{message['msg']}}</p>
+                     <span>{{ moment(message['message_date']).fromNow()}}</span>
+                  </div>
+              </div>
+                <!-- <div class = "msg-box-received">
                     <p class = "pull-left">
                         {{message['msg']}}
                     </p>
                     <p class="pull-left">
                         {{ moment(message['message_date']).fromNow() }} By {{message['fromUserId']}}
                     </p>
-                </div>
+                </div> -->
                 {% endif %}
                 <br/>
             </div>
             {% endfor %}
-        </div>
-        {% else %}
+         {% else %}
         <h2>Select A Friend to Message</h2>
         {% endif %}
     </div>
