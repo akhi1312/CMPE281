@@ -1068,7 +1068,8 @@ def getNetwork():
 
 @app.route('/graph', methods=['GET'])
 def render_graph():
-    return render_template("test.html")
+    adminData = getStats()
+    return render_template("test.html",adminData=adminData)
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
