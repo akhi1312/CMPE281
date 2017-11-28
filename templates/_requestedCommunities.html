@@ -17,13 +17,13 @@
                             <th align="center">Accept/Decline</th>
                         </tr>
 
-                        {% for community in unjoined %}
+                        {% for data in response %}
                         <tr>
-                            <td>{{response..name}}</td>
-                            <td>{{user.username}}</td>
+                            <td>{{data.community_name}}</td>
+                            <td>{{data.username}}</td>
                             <td>
-                                <a data-id={{community.id}} data-user={{user.username}} class="btn btn-success" onclick="AcceptRequest(this)" style="margin-right:5px">Accept</a>
-                                <a data-id={{community.id}} data-user={{user.username}} class="btn btn-danger" onclick="DeclineRequest(this)">Decline</a>
+                                <a data-id={{data.community_id}} data-user={{data.username}} class="btn btn-success" onclick="AcceptRequest(this)" style="margin-right:5px">Accept</a>
+                                <a data-id={{data.community_id}} data-user={{data.username}} class="btn btn-danger" onclick="DeclineRequest(this)">Decline</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -44,7 +44,28 @@
             console.log($(elm).attr('data-id'))
             console.log($(elm).attr('data-user'))
              $.ajax({
-                 url: '/decline_request_user',
+                 url: '/reject_request',
+                 data: {
+                     id: $(elm).attr('data-id'),
+                     username: $(elm).attr('data-user')
+                 },
+                 type: 'POST',
+                 success: function (res) {
+                     var response = $.parseJSON(res)
+                     if(response.status == 200)
+                         location.reload()
+                 },
+                 error: function (error) {
+                     console.log(error);
+                 }
+             });
+         }
+
+         function AcceptRequest(elm){
+            console.log($(elm).attr('data-id'))
+            console.log($(elm).attr('data-user'))
+             $.ajax({
+                 url: '/join_community',
                  data: {
                      id: $(elm).attr('data-id'),
                      username: $(elm).attr('data-user')
