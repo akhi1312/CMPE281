@@ -1070,7 +1070,7 @@ def getNetwork():
 @app.route('/admin/graph', methods=['GET'])
 def render_graph():
     adminData = getStats()
-    billing()
+
     return render_template("test.html",adminData=adminData)
 
 
