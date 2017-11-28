@@ -224,6 +224,7 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
+    createAdmin()
     form = RegistrationForm()
     if form.validate_on_submit():
         username = form.username.data.lower()
@@ -522,6 +523,9 @@ def login():
                 flash('You have successfully logged In')
                 print user.status
                 print current_user.status
+                if current_user.role == 'admin':
+                    print 'inside admin'
+                    return redirect(url_for('admin'))
                 return redirect(url_for('home'))
             else:
                 flash('password is incorrect')
@@ -1170,7 +1174,6 @@ def getNetwork():
 @app.route('/admin/graph', methods=['GET'])
 def render_graph():
     adminData = getStats()
-    billing()
     return render_template("test.html",adminData=adminData)
 
 
@@ -1208,6 +1211,18 @@ def upload():
 
 print ("Done")
 
+# def createAdmin():
+#     admin = User(username='admin',
+#                     firstName='admin',
+#                     lastName='admin',
+#                     email='socialnetwork281@gmail.com',
+#                     password=generate_password_hash('Cmpe@281',method='sha256'),
+#                     contact_number=9999999999,
+#                     joining_date=datetime.datetime.utcnow(),
+#                     status = 'approved',
+#                     role='admin')
+#     db.session.add(admin)
+#     db.session.commit()
+
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
-    billing()

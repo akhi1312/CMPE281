@@ -43,6 +43,45 @@
 
 </div>
 
+<script>
+        function Disable(elm){
+        console.log($(elm).attr('data-id'))
+         $.ajax({
+             url: '/disable',
+             data: {
+                 id: $(elm).attr('data-id')
+             },
+             type: 'POST',
+             success: function (res) {
+                 var response = $.parseJSON(res)
+                 if(response.status == 200)
+                     location.reload()
+             },
+             error: function (error) {
+                 console.log(error);
+             }
+         });
+     }
 
+         function Enable(elm){
+            console.log($(elm).attr('data-id'))
+             $.ajax({
+                 url: '/enable',
+                 data: {
+                     id: $(elm).attr('data-id')
+                 },
+                 type: 'POST',
+                 success: function (res) {
+                     var response = $.parseJSON(res)
+                     if(response.status == 200)
+                         location.reload()
+                 },
+                 error: function (error) {
+                     console.log(error);
+                 }
+             });
+         }
+
+</script>
 
 {% endblock %}
