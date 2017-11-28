@@ -1,29 +1,34 @@
 {% extends "_base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %}
 <div class="row">
-    <div class="col-md-3 sidebar-nav-fixed d-flex justify-content-center">
+    <div class="col-md-3 col-xs-4 " style="text-align:center; padding-right:0px;">
         <div class="affix">
-            <div class="card">
                 <img src="../static/images/avatar.png" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
                 <h2>{{communityObj.name}}</h2>
                 <h5>{{communityObj.description}}</h5>
                 <h6>{{communityObj.address}}</h6>
                 <h6>{{communityObj.city}} - {{communityObj.zip_code}}</h6>
-            </div>
             <br/>
-            <div class ="communityboxcard">
-                <h4>ManagedBy: </h4><h5>{{moderator}}</h5>
+            <div class="managedBy">
+                <h4>ManagedBy: </h4>
+                <div >
+                    <a href="{{'/profile/%s'%moderator}}"> {{moderator}}</a>
+                 </div>
             </div>
             <hr/>
-            <div class="communityboxcard">
-                <ul>
-                    Members:
-                    <hr/> {% for member in members %}
-                    <div class="CommunityNameCard">
-                        <li>
-                            <a href="#">{{ member }}</a>
-                        </li>
-                    </div>
+            <div>
+                Members:
+                <hr/>
+
+                <ul class="listCommunities">
+                    {% if members %}
+                    {% for member in members %}
+                    <li class="btntype">
+                        <a href={{'/profile/%s'%member}}>{{member}}</a>
+                    </li>
                     {% endfor %}
+                    {% else %}
+                    <h3>No members</h3>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -38,6 +43,45 @@
 
 </div>
 
+<script>
+        function Disable(elm){
+        console.log($(elm).attr('data-id'))
+         $.ajax({
+             url: '/disable',
+             data: {
+                 id: $(elm).attr('data-id')
+             },
+             type: 'POST',
+             success: function (res) {
+                 var response = $.parseJSON(res)
+                 if(response.status == 200)
+                     location.reload()
+             },
+             error: function (error) {
+                 console.log(error);
+             }
+         });
+     }
 
+         function Enable(elm){
+            console.log($(elm).attr('data-id'))
+             $.ajax({
+                 url: '/enable',
+                 data: {
+                     id: $(elm).attr('data-id')
+                 },
+                 type: 'POST',
+                 success: function (res) {
+                     var response = $.parseJSON(res)
+                     if(response.status == 200)
+                         location.reload()
+                 },
+                 error: function (error) {
+                     console.log(error);
+                 }
+             });
+         }
+
+</script>
 
 {% endblock %}

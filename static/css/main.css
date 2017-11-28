@@ -113,3 +113,10 @@ div.comment-form {
     border: 1px solid #8ef441;
     background-color: rgb(65, 244, 178, 0.2)
 }
+
+.managedBy{
+    width:100%;
+    padding: 0.5em 0;
+    border:1px solid black;
+    margin:2px 0;
+}

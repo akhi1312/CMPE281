@@ -80,3 +80,7 @@ class ChatForm(FlaskForm):
     msg = StringField('', validators=[DataRequired()])
     submit = SubmitField('Send Message')
 
+class ExternalMessageForm(FlaskForm):
+    subject = StringField('Subject',validators=[DataRequired()])
+    Message = StringField('Message', validators=[DataRequired(), Length(min=1, max=256)])
+    submit = SubmitField('Send Message')

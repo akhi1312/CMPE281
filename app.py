@@ -3,7 +3,7 @@ from flask_moment import Moment
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm
 from index import app, db, mongo,logger
 from models import Community, User
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -224,6 +224,7 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
+    createAdmin()
     form = RegistrationForm()
     if form.validate_on_submit():
         username = form.username.data.lower()
@@ -240,7 +241,8 @@ def new_user():
                         email = email,
                         password=password,
                         contact_number = contact_number,
-                        joining_date=joining_date)
+                        joining_date=joining_date,
+                        role = 'user')
         if User.query.filter_by(username=username).first() is not None:
             flash("Username already exists")
             form = RegistrationForm()
@@ -290,6 +292,56 @@ def messages():
     for friend in friends:
         print friend
     return render_template('messages.html', members = friends, selectedUser = None)
+
+@app.route('/messageToOtherModerator',methods=['GET'])
+def messageModerator():
+    communities = Community.query.all()
+    communityId = [community.ID for community in communities]
+    response = []
+    for _id in communityId:
+        _moderator = UserModerator.query.filter_by(communityID=_id).first()
+        print _moderator
+        user = User.query.filter_by(username=_moderator.moderator).first()
+        detailObj = {
+            'CommunityID': _id,
+            'CommunityName': Community.query.filter_by(ID=_id).first().name,
+            'Moderator': user
+        }
+        response.append(detailObj)
+    return render_template('_externalCommunities.html', resp = response, selectedUser = None)
+
+@app.route('/messageToOtherCommunity/<moderator>', methods=['GET','POST'])
+@login_required
+def externalCommunityMessage(moderator):
+    if current_user.role != 'moderator':
+        flash('You are not an moderator..Only moderator can view this page..')
+        return redirect(url_for('home'))
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        print form.subject.data
+        print form.Message.data
+        messages = mongo.messages
+        message_data = {
+            'fromUserId': current_user.username,
+            'subject':form.subject.data,
+            'msg': form.Message.data,
+            'toUserId': moderator,
+            'message_date': datetime.datetime.utcnow()
+        }
+        result = messages.insert_one(message_data)
+    communities = Community.query.all()
+    communityId = [community.ID for community in communities]
+    response = []
+    for _id in  communityId:
+        _moderator = UserModerator.query.filter_by(communityID = _id).first()
+        user = User.query.filter_by(username = _moderator.moderator).first()
+        detailObj = {
+            'CommunityID': _id,
+            'CommunityName': Community.query.filter_by(ID=_id).first().name,
+            'Moderator': user
+        }
+        response.append(detailObj)
+    return render_template('_externalCommunities.html', form = form, resp = response, selectedUser = moderator)
 
 @app.route('/messages/<username>',methods=['GET', 'POST'])
 def retrieveMessagesOfUser(username):
@@ -398,6 +450,7 @@ def home():
     form = ArticleForm(categories, category=0)
     display_posts = getPostsByUser()
     communities = getUserCommunities()
+    moderatorCommunityList = userModeratorCommunityList()
     if form.validate_on_submit():
         print 'inside add post'
         title = form.title.data
@@ -412,7 +465,8 @@ def home():
         form.body.data = ""
         form.category.data = ""
         display_posts = getPostsByUser()
-    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities)
+    moderatorCommunityList = userModeratorCommunityList()
+    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities, moderatorCommunityList = moderatorCommunityList)
 
 @app.before_request
 def before_request():
@@ -469,6 +523,9 @@ def login():
                 flash('You have successfully logged In')
                 print user.status
                 print current_user.status
+                if current_user.role == 'admin':
+                    print 'inside admin'
+                    return redirect(url_for('admin'))
                 return redirect(url_for('home'))
             else:
                 flash('password is incorrect')
@@ -525,6 +582,10 @@ def approveCommunity(communityId):
     user_mod = UserModerator(communityID=communityId,
     moderator=created_by)
     communityDetails.status = 'Approved'
+    current_user.role = 'moderator'
+    user = User.query.filter_by(username=created_by).first()
+    user.role = 'moderator'
+    db.session.add(user)
     db.session.add(user_comm)
     db.session.add(user_mod)
     db.session.commit()
@@ -549,8 +610,6 @@ def joinCommunity():
         'status':200
     }
     return json.dumps(data)
-
-
 
 
 # Delete Communit modified Akhilesh
@@ -585,8 +644,6 @@ def deleteUser():
     return json.dumps(data)
 
 
-
-
 # Code End
 @app.route('/join_request', methods = ['POST'])
 def joiningRequest():
@@ -617,7 +674,7 @@ def declineRequestByUser():
 
 #api route to
 @app.route('/reject_request', methods = ['POST'])
-def rejectRequestModerator(communityId):
+def rejectRequestModerator():
     userID = request.form['username']
     communityID = request.form['id']
     print userID
@@ -863,7 +920,7 @@ def community(community_id):
 #api to get user friends
 @app.route('/get_user_friends', methods=['GET'])
 def getUserFriends(username = None):
-    if  not username:
+    if not username:
         userID = current_user.username
     else:
         userID = username
@@ -980,10 +1037,57 @@ def editPost(id):
     form.body.data = post['content']
     return render_template('_editPost.html', form=form, id = id)
 
+@app.route('/disable', methods=['POST'])
+@login_required
+def disable():
+    _id = request.form['id']
+    post = mongo.posts.find_one({ "_id": ObjectId(_id) })
+    flash('The post has been disabled.')
+    # Below route need to be changed..
+    mongo.posts.update_one({
+          '_id': post['_id']
+        },{
+          '$set': {
+              'disabled': True,
+            'posted_date':datetime.datetime.utcnow()
+          }
+        }, upsert=False)
+    data = {
+        'status': 200
+    }
+    return json.dumps(data)
+
+@app.route('/enable', methods=['POST'])
+@login_required
+def enable():
+    _id = request.form['id']
+    post = mongo.posts.find_one({ "_id": ObjectId(_id) })
+    flash('The post has been disabled.')
+    # Below route need to be changed..
+    mongo.posts.update_one({
+          '_id': post['_id']
+        },{
+          '$set': {
+              'disabled': False,
+            'posted_date':datetime.datetime.utcnow()
+          }
+        }, upsert=False)
+    data = {
+        'status': 200
+    }
+    return json.dumps(data)
+
 # def admin():
 #     userModObj = UserModerator.query.all()
 #     communityNames = []
 #     for obj in userModObj:
+
+def userModeratorCommunityList():
+    moderatorCommunityListObj = UserModerator.query.filter_by(moderator = current_user.username).all()
+    communityList = []
+    for item in moderatorCommunityListObj:
+        communityList.append(Community.query.filter_by(ID=item.communityID).first().name)
+    return communityList
 
 
 def adminCommunityData():
@@ -1070,7 +1174,6 @@ def getNetwork():
 @app.route('/admin/graph', methods=['GET'])
 def render_graph():
     adminData = getStats()
-
     return render_template("test.html",adminData=adminData)
 
 
@@ -1108,6 +1211,18 @@ def upload():
 
 print ("Done")
 
+# def createAdmin():
+#     admin = User(username='admin',
+#                     firstName='admin',
+#                     lastName='admin',
+#                     email='socialnetwork281@gmail.com',
+#                     password=generate_password_hash('Cmpe@281',method='sha256'),
+#                     contact_number=9999999999,
+#                     joining_date=datetime.datetime.utcnow(),
+#                     status = 'approved',
+#                     role='admin')
+#     db.session.add(admin)
+#     db.session.commit()
+
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
-    billing()
