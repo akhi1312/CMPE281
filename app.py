@@ -421,7 +421,7 @@ def before_request():
 @login_required
 def profilefrnd(username):
     userposts = mongo.posts.find({ "author": username })
-    userFriends = getUserFriends(username);
+    userFriends = getUserFriends(username)
     user = User.query.filter_by(username=username).first()
     form = EditForm(request.form)
     return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
@@ -532,10 +532,13 @@ def approveCommunity(communityId):
 #api to join a community
 @app.route('/join_community', methods = ['POST'])
 def joinCommunity():
-    userID = current_user.username
+    userID = request.form['username']
     communityID = request.form['id']
+    print userID
+    print communityID
     user_comm = UserCommunity(userID=userID,
                         communityID=communityID)
+    UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.add(user_comm)
     db.session.commit()
     communityName = (Community.query.filter_by(ID=communityID).first()).name
@@ -583,9 +586,7 @@ def deleteUser():
 
 
 
-# Code End 
-
-#api to join a community
+# Code End
 @app.route('/join_request', methods = ['POST'])
 def joiningRequest():
     userID = current_user.username
@@ -608,14 +609,24 @@ def declineRequestByUser():
     communityID = request.form['id']
     UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.commit()
+    data = {
+        'status':200
+    }
+    return json.dumps(data)
 
 #api route to
-@app.route('/reject_request/<communityId>', methods = ['POST'])
+@app.route('/reject_request', methods = ['POST'])
 def rejectRequestModerator(communityId):
-    userID = current_user.username
-    communityID = communityId
+    userID = request.form['username']
+    communityID = request.form['id']
+    print userID
+    print communityID
     UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.commit()
+    data = {
+        'status': 200
+    }
+    return json.dumps(data)
 
 #api to join a community
 @app.route('/leave_community', methods = ['POST'])
@@ -996,6 +1007,35 @@ def adminCommunityData():
         }
         response.append(data)
     return response
+
+@app.route('/requestedtojoincommunitites', methods=['GET'])
+def moderatorUserData():
+    current_moderator = current_user.username
+    print current_moderator
+    moderatorCommObj = UserModerator.query.filter_by(moderator=current_moderator).all()
+    communityName = []
+    moderator_communities = []
+    requested = []
+    response = []
+    for obj in moderatorCommObj:
+        moderator_communities.append(obj.communityID)
+    for id in moderator_communities:
+        name = Community.query.filter_by(ID=id).first().name
+        print name
+        userReqObj = UserRequestedCommunity.query.filter_by(communityID=id).all()
+        if userReqObj is not None:
+            for obj in userReqObj:
+                user = User.query.filter_by(username=obj.userID).first()
+                print user.username
+                data = {
+                "community_id" : id,
+                "community_name" : name,
+                "username" : user.username
+                }
+                response.append(data)
+    return render_template('_requestedCommunities.html', response=response)
+
+
 
 @app.route('/network', methods=['GET'])
 def getNetwork():
