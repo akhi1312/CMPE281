@@ -22,6 +22,7 @@ from awsServices import send_email, sendMessage
 from flask_mail import Mail,Message
 from threading import Thread
 from flask_pagedown import PageDown
+import boto3
 
 from bson.objectid import ObjectId
 
@@ -1166,9 +1167,47 @@ def getNetwork():
 
     return json.dumps(response)
 
-@app.route('/graph', methods=['GET'])
+@app.route('/admin/graph', methods=['GET'])
 def render_graph():
-    return render_template("test.html")
+    adminData = getStats()
+    billing()
+    return render_template("test.html",adminData=adminData)
+
+
+@app.route('/admin/billing', methods=['GET'])
+def render_billing():
+    adminData = getStats()
+    billDetails = billing()    
+
+    return render_template("billing.html",adminData=adminData , billDetails= billDetails)
+
+
+def billing():
+    print('check1')
+    client = boto3.client('budgets')
+    response = client.describe_budget(
+    AccountId='507614993775',
+    BudgetName='MonthlyAWSBudget'
+    )
+    return response
+  
+
+def upload():
+    print('Upload')
+    BUCKET_NAME = 'img-community-bucket'
+
+    data = open('bitmoji.png', 'rb')
+
+    s3 = boto3.resource(
+    's3',
+    aws_access_key_id=ACCESS_KEY_ID,
+    aws_secret_access_key=ACCESS_SECRET_KEY,
+    config=Config(signature_version='s3v4')
+    )
+    s3.Bucket(BUCKET_NAME).put_object(Key='bitmoji.png', Body=data)
+
+print ("Done")
 
 if __name__ == '__main__':
     app.run(debug = True,threaded=True)
+    billing()
