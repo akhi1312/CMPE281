@@ -18,8 +18,8 @@ Select a Friend to Message
                 {% if current_user.username != moderator.Moderator.username %}
                 <li class="btntype">
                     <a href="{{'/messageToOtherCommunity/%s'%moderator.Moderator.username}}"><img src={{moderator.Moderator.gravatar(size=256)}} alt="John"
-                                     style="width:25px; border-radius: 50%;"> {{moderator.Moderator.firstName | capitalize}}
-                        {{moderator.Moderator.lastName | capitalize}}</a>
+                                     style="width:25px; border-radius: 50%;"> 
+                        {{moderator.CommunityName | capitalize}}</a>
                 </li>
                 {% endif %}
                 {% endfor %}
