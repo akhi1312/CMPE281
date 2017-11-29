@@ -523,6 +523,8 @@ def login():
                 flash('You have successfully logged In')
                 print user.status
                 print current_user.status
+                print ("role")
+                print (current_user.role)
                 if current_user.role == 'admin':
                     print 'inside admin'
                     return redirect(url_for('admin'))
@@ -577,12 +579,13 @@ def approveCommunity(communityId):
     # communityDetails = Community.query.filter_by(name = communityName).first()
     communityDetails = Community.query.filter_by(ID=communityId).first()
     created_by = communityDetails.created_by
+    reqUser = User.query.filter_by(username=craeted_by).first()
     user_comm = UserCommunity(userID=created_by,
                         communityID=communityId)
     user_mod = UserModerator(communityID=communityId,
     moderator=created_by)
     communityDetails.status = 'Approved'
-    current_user.role = 'moderator'
+    reqUser.role = 'moderator'
     user = User.query.filter_by(username=created_by).first()
     user.role = 'moderator'
     db.session.add(user)
@@ -1218,4 +1221,4 @@ print ("Done")
 #     db.session.commit()
 
 if __name__ == '__main__':
-    app.run(debug = True,threaded=True, host='0.0.0.0', port=3000)
+    app.run(debug = True,threaded=True)
