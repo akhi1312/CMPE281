@@ -8,7 +8,7 @@ Flask-Bootstrap==3.3.7.1
 Flask-Login==0.4.0
 Flask-Mail==0.9.1
 Flask-SQLAlchemy==2.0
-Flask-WTF==0.10.3
+flask-wtf==0.14.2
 idna==2.6
 itsdangerous==0.24
 Jinja2==2.7.3
@@ -26,3 +26,7 @@ Werkzeug==0.9.6
 WTForms==2.0.1
 passlib==1.7.1
 flask-httpauth==3.2.3
+flask-moment==0.5.2
+flask-pagedown==0.2.2
+markdown==2.6.9
+bleach-2.1.1
