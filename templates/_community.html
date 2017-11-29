@@ -13,6 +13,12 @@
                 <div >
                     <a href="{{'/profile/%s'%moderator}}"> {{moderator}}</a>
                  </div>
+                {% if current_user.role != 'moderator' %}
+                <br/>
+                <div>
+                    <a class="btn btn-default" href="/msgtomoderator/{{communityObj.ID}}">Message to {{moderator}}</a>
+                </div>
+                {% endif %}
             </div>
             <hr/>
             <div>

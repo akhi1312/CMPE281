@@ -1,0 +1,21 @@
+{% extends "_base.html" %}
+{% block title %}send message{% endblock %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-6 col-md-offset-3">
+        <div class="page-header">
+            <h1>Message to {{moderator}}</h1>
+        </div>
+            {% if community %}<form method="POST" action="/msgtomoderator/{{community}}">
+            {% else %}<form method="POST" action="/msgtoadmin">
+            {% endif %}
+            {{form.hidden_tag()}}
+            {{ wtf.form_field(form.subject) }}
+            {{ wtf.form_field(form.message) }}
+            {{ wtf.form_field(form.submit, button_map={'submit':'success'}) }}
+        </form>
+    </div>
+</div>
+{% endblock %}

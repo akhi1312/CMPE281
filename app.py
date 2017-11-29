@@ -1207,6 +1207,46 @@ def upload():
 
 print ("Done")
 
+@app.route("/msgtomoderator/<communityID>",methods = ['GET','POST'])
+def msgToModerator(communityID):
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        print form.message.data
+        print form.subject.data
+        message = {
+            'subject': form.subject.data,
+            'msg': form.message.data,
+            'sender': current_user.username,
+            'community': communityID,
+            'recipient': moderator,
+            'timestamp': datetime.datetime.utcnow()
+        }
+        mongo.mod_messages.insert_one(message)
+        flash('Your Message has been delievered to the moderator')
+        return redirect(url_for('community',community_id=communityID))
+    return render_template('_messageTemplate.html',form=form, moderator=moderator, community=communityID)
+
+
+@app.route("/msgtoadmin", methods=['GET','POST'])
+def msgToAdmin():
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        print form.message.data
+        print form.subject.data
+        messageToAdmin = {
+            'subject': form.subject.data,
+            'msg': form.message.data,
+            'sender': current_user.username,
+            'recipient': 'admin',
+            'timestamp': datetime.datetime.utcnow()
+        }
+        mongo.mod_messages.insert_one(messageToAdmin)
+        flash('Your Message has been delievered to the Admin')
+        return redirect(url_for('home'))
+    return render_template('_messageTemplate.html',form=form, moderator='admin')
+
+
 # def createAdmin():
 #     admin = User(username='admin',
 #                     firstName='admin',
