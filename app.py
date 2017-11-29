@@ -156,11 +156,11 @@ def admin_community():
 def admin_post():
     adminData = getStats()
     listOfPost = mongo.posts.find({})
-   
+
     return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost)
 
 
-#edit community 
+#edit community
 @app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
 def edit_community(community_id):
     communityID = int(community_id)
@@ -1089,7 +1089,6 @@ def userModeratorCommunityList():
         communityList.append(Community.query.filter_by(ID=item.communityID).first().name)
     return communityList
 
-
 def adminCommunityData():
     userMod = UserModerator.query.all()
     response = []
@@ -1140,20 +1139,14 @@ def moderatorUserData():
                 response.append(data)
     return render_template('_requestedCommunities.html', response=response)
 
-
-
 @app.route('/network', methods=['GET'])
 def getNetwork():
     communityObj = Community.query.all()
-
     userCommunity = UserCommunity.query.all()
-    # userCommObj =
     communities = []
     users = []
     for obj in communityObj:
-        # cin[obj.ID] = obj.name
         communities.append([obj.ID, obj.name])
-    # print (response)
     start = 999
     for obj in userCommunity:
         data = {
@@ -1180,7 +1173,7 @@ def render_graph():
 @app.route('/admin/billing', methods=['GET'])
 def render_billing():
     adminData = getStats()
-    billDetails = billing()    
+    billDetails = billing()
 
     return render_template("billing.html",adminData=adminData , billDetails= billDetails)
 
@@ -1193,7 +1186,7 @@ def billing():
     BudgetName='MonthlyAWSBudget'
     )
     return response
-  
+
 
 def upload():
     print('Upload')
