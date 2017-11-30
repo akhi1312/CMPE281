@@ -3,12 +3,9 @@ from flask_moment import Moment
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm
-from index import app, db, mongo,logger
-from models import Community, User
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm, commuityUpdateForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 import json
 import psycopg2
 import os
@@ -27,6 +24,7 @@ import boto3
 from bson.objectid import ObjectId
 
 from markdown import markdown
+from decorator import admin_required
 import bleach
 
 auth = HTTPBasicAuth()
@@ -134,18 +132,24 @@ def index():
     return render_template('index.html')
 
 @app.route('/admin', methods = ['GET'])
+@login_required
+@admin_required
 def admin():
     adminData = getStats()
     listOfRequestedCommunitites = getRequestedCommunity()
     return render_template('admin.html', adminData=adminData , listOfRequestedCommunitites=listOfRequestedCommunitites)
 
 @app.route('/admin_users', methods = ['GET','POST'])
+@login_required
+@admin_required
 def admin_users():
     adminData = getStats()
     users = User.query.order_by((User.joining_date)).all()
     return render_template('admin_users.html',users=users , adminData=adminData )
 
 @app.route('/admin_community', methods = ['GET','POST'])
+@login_required
+@admin_required
 def admin_community():
    adminData = getStats()
    # categories = getUserCommunities()
@@ -153,6 +157,8 @@ def admin_community():
    return render_template('admin_community.html',communityDetails=communityDetails, adminData=adminData )
 
 @app.route('/admin_post', methods = ['GET','POST'])
+@login_required
+@admin_required
 def admin_post():
     adminData = getStats()
     listOfPost = mongo.posts.find({})
@@ -162,11 +168,24 @@ def admin_post():
 
 #edit community
 @app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
+@login_required
+@admin_required
 def edit_community(community_id):
     communityID = int(community_id)
     print "Printing Comuity"
     communityDetails = Community.query.filter_by(ID=communityID).first()
-    form = commuityRegistraion()
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    userObj = UserCommunity.query.filter_by(communityID=communityID).all()
+    members = []
+    for user in userObj:
+        members.append(user.userID)
+    members = [(k,v) for k,v in enumerate(members)]
+    print members
+    current_moderator = [member for member in members if member[1] == moderator]
+    print moderator
+    print current_moderator
+    print current_moderator[0][0]
+    form = commuityUpdateForm(members,moderator=current_moderator[0][0])
     if form.validate_on_submit():
         communityDetails.name = form.name.data.lower()
         communityDetails.desc = form.desc.data
@@ -174,6 +193,14 @@ def edit_community(community_id):
         communityDetails.city = form.city.data
         communityDetails.zip_code = form.zip_code.data
         db.session.commit()
+        new_moderator = dict(members).get(form.moderator.data)
+        if moderator != new_moderator:
+            moderator = new_moderator
+            if not checkAsModeratorForOtherCommunity(new_moderator):
+                User.query.filter_by(username=new_moderator).first().role = 'moderator'
+            if not checkAsModeratorForOtherCommunity(moderator):
+                User.query.filter_by(username=moderator).first().role = 'user'
+            db.session.commit()
         return redirect(url_for('admin_community'))
     else:
         communityDetails = Community.query.filter_by(ID=communityID).first()
@@ -184,7 +211,14 @@ def edit_community(community_id):
         form.zip_code.data = communityDetails.zip_code
         # form.creation_date.data = communityDetails.creation_date
         # form.created_by.data = communityDetails.created_by
-        return render_template('_edit_community.html',form=form ,column = communityID)
+        return render_template('_edit_community.html',form=form ,column = communityID, name = communityDetails.name)
+
+def checkAsModeratorForOtherCommunity(moderatorUserName):
+    moderatorObj = UserModerator.query.filter_by(moderator = moderatorUserName).first()
+    if moderatorObj:
+        return True
+    else:
+        return False
 
 
 #create new community
@@ -224,7 +258,6 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
-    createAdmin()
     form = RegistrationForm()
     if form.validate_on_submit():
         username = form.username.data.lower()
@@ -1102,6 +1135,8 @@ def adminCommunityData():
         firstName = userObj.firstName
         lastName = userObj.lastName
         communityObj = Community.query.filter_by(ID = communityID).first()
+        membersCount = len(UserCommunity.query.filter_by(communityID = communityID).all())
+
         communityName = communityObj.name
         creation_date = communityObj.creation_date
         data = {
@@ -1110,7 +1145,8 @@ def adminCommunityData():
         "firstName" : firstName,
         "lastName" : lastName,
         "communityName" : communityName,
-        "creation_date" : creation_date
+        "creation_date" : creation_date,
+        "count": membersCount
         }
         response.append(data)
     return response

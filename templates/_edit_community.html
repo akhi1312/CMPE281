@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-md-6 col-md-offset-3">
         <div class="page-header">
-            <h1>Create New Community</h1>
+            <h1>Edit {{name}}'s Community</h1>
         </div>
         <form method="POST" action="/admin/edit_community/{{ column }}">
             {{form.hidden_tag()}}
@@ -15,6 +15,7 @@
             {{wtf.form_field(form.address)}}
             {{wtf.form_field(form.city)}}
             {{wtf.form_field(form.zip_code)}}
+            {{wtf.form_field(form.moderator)}}
             <div class="row">
               <div class="col-md-6"> <a class="btn btn-danger btn-block" href="/admin_community">Cancel</a>
             </div>

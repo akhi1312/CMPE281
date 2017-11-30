@@ -47,6 +47,19 @@ class commuityRegistraion(FlaskForm):
     city = StringField('City:', validators=[DataRequired(), Length(max=30)])
     zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
 
+class commuityUpdateForm(FlaskForm):
+    """User Registration Form"""
+    def __init__(self, members, *args,**kwargs):
+        super(commuityUpdateForm, self).__init__(*args, **kwargs)
+        self.moderator.choices = members
+
+    name = StringField('Name:', validators=[DataRequired(), Length(4,50,'Community Name must be between 4 to 50 characters')])
+    desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
+    address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
+    city = StringField('City:', validators=[DataRequired(), Length(max=30)])
+    zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
+    moderator = SelectField('Moderator:', coerce=int)
+
 # Post Form Class
 class ArticleForm(FlaskForm):
     def __init__(self, categories, *args,**kwargs):
