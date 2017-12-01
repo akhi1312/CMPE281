@@ -196,8 +196,9 @@ def edit_community(community_id):
         communityDetails.zip_code = form.zip_code.data
         db.session.commit()
         new_moderator = dict(members).get(form.moderator.data)
+        print new_moderator
         if moderator != new_moderator:
-            moderator = new_moderator
+            UserModerator.query.filter_by(communityID=communityID).first().moderator = new_moderator
             if not checkAsModeratorForOtherCommunity(new_moderator):
                 User.query.filter_by(username=new_moderator).first().role = 'moderator'
             if not checkAsModeratorForOtherCommunity(moderator):
@@ -497,22 +498,6 @@ def get_messages(person1, person2):
         listOfConversations.append(reply)
     listOfConversations.sort(key=lambda r: r['message_date'], reverse=True)
     return listOfConversations
-
-#add complaint
-@app.route('/add_complaint', methods = ['POST'])
-def add_complaint():
-    complaints = mongo.complaints
-    complaint_data = {
-        'communityID': request.json['communityID'],
-        'category': request.json['category'],
-        'title': request.json['title'],
-        'content': request.json['content'],
-        'complainee': request.json['complainee'],
-        'posted_date': datetime.datetime.now(),
-        'status':request.json['status']
-    }
-    result = complaints.insert_one(complaint_data)
-    return ('One complaint: {0}'.format(result.inserted_id))
 
 #get all the distict communities
 @app.route('/get_all_community', methods = ['GET'])
