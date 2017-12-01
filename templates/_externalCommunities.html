@@ -17,9 +17,9 @@ Select a Friend to Message
                 {% for moderator in resp %}
                 {% if current_user.username != moderator.Moderator.username %}
                 <li class="btntype">
-                    <a href="{{'/messageToOtherCommunity/%s'%moderator.Moderator.username}}"><img src={{moderator.Moderator.gravatar(size=256)}} alt="John"
+                    <a href="{{'/messageToOtherCommunity/%s'%moderator.CommunityID}}"><img src={{moderator.Moderator.gravatar(size=256)}} alt="John"
                                      style="width:25px; border-radius: 50%;"> 
-                        {{moderator.CommunityName | capitalize}}</a>
+                        {{moderator.CommunityName | capitalize}} ({{moderator.Moderator.username}})</a>
                 </li>
                 {% endif %}
                 {% endfor %}
@@ -31,7 +31,10 @@ Select a Friend to Message
     <div class="col-md-8 " style="border-left: 1px solid;">
         {% if selectedUser %}
         <div class = "row" style="margin-left:5px">
-        <form action="/messageToOtherCommunity/{{selectedUser}}" method="POST">
+        <form action="/messageToOtherCommunity/{{selectedCommunity}}" method="POST">
+            <div class="page-header">
+            <h1>Send Message to {{selectedUser}}</h1>
+            </div>
             <div style="margin-left:5px">
                 {{ wtf.quick_form(form) }}
             </div>

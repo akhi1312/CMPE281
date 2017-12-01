@@ -55,11 +55,13 @@ pagedown.init_app(app)
 mail = Mail(app)
 
 
+
 listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
 
 allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
                         'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
                         'h1', 'h2', 'h3', 'p']
+
 def convertIntoHTML(value):
     return bleach.linkify(bleach.clean(markdown(value, output_format='html'),tags=allowed_tags, strip=True))
 
@@ -343,25 +345,31 @@ def messageModerator():
         response.append(detailObj)
     return render_template('_externalCommunities.html', resp = response, selectedUser = None)
 
-@app.route('/messageToOtherCommunity/<moderator>', methods=['GET','POST'])
+@app.route('/messageToOtherCommunity/<communityID>', methods=['GET','POST'])
 @login_required
-def externalCommunityMessage(moderator):
+def externalCommunityMessage(communityID):
     if current_user.role != 'moderator':
         flash('You are not an moderator..Only moderator can view this page..')
         return redirect(url_for('home'))
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    communityName = Community.query.filter_by(ID=communityID).first().name
     form = ExternalMessageForm()
     if form.validate_on_submit():
         print form.subject.data
-        print form.Message.data
-        messages = mongo.messages
+        print form.message.data
+        messages = mongo.mod_messages
         message_data = {
             'fromUserId': current_user.username,
             'subject':form.subject.data,
-            'msg': form.Message.data,
+            'msg': form.message.data,
             'toUserId': moderator,
+            'community': communityName,
             'message_date': datetime.datetime.utcnow()
         }
         result = messages.insert_one(message_data)
+        form.subject.data = ''
+        form.message.data = ''
+        flash('your message has been sent')
     communities = Community.query.all()
     communityId = [community.ID for community in communities]
     response = []
@@ -374,7 +382,7 @@ def externalCommunityMessage(moderator):
             'Moderator': user
         }
         response.append(detailObj)
-    return render_template('_externalCommunities.html', form = form, resp = response, selectedUser = moderator)
+    return render_template('_externalCommunities.html', form = form, resp = response, selectedUser = moderator, selectedCommunity = communityID)
 
 @app.route('/messages/<username>',methods=['GET', 'POST'])
 def retrieveMessagesOfUser(username):
@@ -517,14 +525,14 @@ def profilefrnd(username):
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    username = session['username']
+    username = current_user.username
     userposts = mongo.posts.find({ "author": username })
     userFriends = getUserFriends()
     user = User.query.filter_by(username=username).first()
     for friends in userFriends:
         print friends
 
-    form = EditForm(request.form)
+    form = EditForm()
     if form.validate_on_submit():
         print ("Inside User Updated")
         user.email = form.email.data
@@ -541,7 +549,7 @@ def profile():
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', form=form , userposts = userposts , userFriends = userFriends ,user = user)
+    return render_template('profile.html', form=form , posts = userposts , userFriends = userFriends ,user = user)
 
 @app.route('/login', methods=['GET','POST'])
 def login():

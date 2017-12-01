@@ -17,6 +17,18 @@ class Community(db.Model):
     created_by = db.Column(db.String(128), db.ForeignKey('users.username'))
     status = db.Column(db.String(60), index=True, default="requested")
 
+    def gravatar_hash(self):
+        return hashlib.md5(self.name.lower().encode('utf-8')).hexdigest()
+
+    def gravatar(self, size=100, default='identicon', rating='g'):
+            if request.is_secure:
+                url = 'https://secure.gravatar.com/avatar'
+            else:
+                url = 'http://www.gravatar.com/avatar'
+            hash = self.gravatar_hash()
+            return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
+                url=url, hash=hash, size=size, default=default, rating=rating)
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

@@ -24,7 +24,7 @@
             {{wtf.form_field(form.body)}}
             {{wtf.form_field(form.category)}}
             <div class="row">
-                <div class="col-md-6"><a class="btn btn-primary btn-block" href={{url_for('home')}}>Cancel</a>
+                <div class="col-md-6"><a class="btn btn-primary btn-block" onclick="goBack()">Cancel</a>
                 </div>
                 <div class="col-md-6">
                     <button class="btn btn-md btn-success btn-block" type="submit">Edit Post</button>
@@ -34,4 +34,9 @@
         </div>
     </div>
 </div>
+<script>
+    function goBack() {
+         window.history.back();
+    }
+</script>
 {% endblock %} {% block scripts %} {{ super() }} {{ pagedown.include_pagedown() }} {% endblock %}
