@@ -359,12 +359,12 @@ def externalCommunityMessage(communityID):
         print form.message.data
         messages = mongo.mod_messages
         message_data = {
-            'fromUserId': current_user.username,
+            'sender': current_user.username,
             'subject':form.subject.data,
             'msg': form.message.data,
-            'toUserId': moderator,
+            'recipient': moderator,
             'community': communityName,
-            'message_date': datetime.datetime.utcnow()
+            'timestamp': datetime.datetime.utcnow()
         }
         result = messages.insert_one(message_data)
         form.subject.data = ''
@@ -398,6 +398,44 @@ def retrieveMessagesOfUser(username):
     for friend in friends:
         print friend
     return render_template('messages.html', members=friends, form = form, selectedUser = username, conversations = convos )
+
+@app.route('/mails', methods=['GET'])
+def mails():
+    mails = []
+    messages = mongo.mod_messages.find({'recipient': current_user.username})
+    for msg in messages:
+        mails.append(msg)
+    mails.sort(key=lambda r: r['timestamp'], reverse=True)
+    return render_template('mails.html',mails = mails)
+
+@app.route('/reply/<mailid>',methods=['GET','POST'])
+def getMail(mailid):
+    mail = mongo.mod_messages.find_one({'_id': ObjectId(str(mailid))})
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        subject = form.subject.data
+        msg = form.message.data
+        message_data = {
+            'sender': current_user.username,
+            'subject':form.subject.data,
+            'msg': form.message.data,
+            'recipient': mail['sender'],
+            'community': mail['community'],
+            'timestamp': datetime.datetime.utcnow()
+        }
+        result = mongo.mod_messages.insert_one(message_data)
+        mongo.mod_messages.update_one(
+        {"_id": ObjectId(str(mailid))},
+        {"$push": {
+            'repliesRef': {
+                        'id': result.inserted_id
+                    }
+                }
+            }
+        )
+        flash('Your reply has been sent')
+        return redirect(url_for('mails'))
+    return render_template('reply.html',form = form, mail = mail)
 
 @app.route('/sendmessages', methods=['POST'])
 def saveMessage():
