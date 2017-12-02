@@ -364,7 +364,8 @@ def externalCommunityMessage(communityID):
             'community': communityName,
             'timestamp': datetime.datetime.utcnow()
         }
-        result = messages.insert_one(message_data)
+        # result = messages.insert_one(message_data)
+        send_to_queue(message_data)
         form.subject.data = ''
         form.message.data = ''
         flash('your message has been sent')
@@ -1262,7 +1263,8 @@ def billing():
 
 
 def upload_to_s3(file):
-    bucket_name = 'image-cmpe281-social-network'
+    # bucket_name = 'image-cmpe281-social-network'
+    bucket_name = 'project-281'
     ext = file.filename.split('.')[1]
     file.filename = current_user.username + '.'+ ext
     s3 = boto3.client('s3')
@@ -1280,7 +1282,7 @@ def upload_to_s3(file):
         # This is a catch all exception, edit this part to fit your needs.
         print("Something Happened: ", e)
         return 'error'
-    return 'https://s3-us-west-2.amazonaws.com/image-cmpe281-social-network/{}'.format(file.filename)
+    return 'https://s3-us-west-2.amazonaws.com/{}/{}'.format(bucket_name,file.filename)
 
 print ("Done")
 
@@ -1297,13 +1299,49 @@ def msgToModerator(communityID):
             'sender': current_user.username,
             'community': communityID,
             'recipient': moderator,
-            'timestamp': datetime.datetime.utcnow()
         }
-        mongo.mod_messages.insert_one(message)
+        send_to_queue(message)
+        # mongo.mod_messages.insert_one(message)
         flash('Your Message has been delievered to the moderator')
         return redirect(url_for('community',community_id=communityID))
     return render_template('_messageTemplate.html',form=form, moderator=moderator, community=communityID)
 
+def send_to_queue(message):
+
+    # Create SQS client
+    sqs = boto3.client('sqs')
+
+    queue_url = 'https://sqs.us-west-2.amazonaws.com/431210553064/mails-queue'
+
+    # Send message to SQS queue
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        MessageAttributes={
+            'Subject': {
+                'DataType': 'String',
+                'StringValue': message['subject']
+            },
+            'Msg': {
+                'DataType': 'String',
+                'StringValue': message['msg']
+            },
+            'Sender': {
+                'DataType': 'String',
+                'StringValue': message['sender']
+            },
+            'Community': {
+                'DataType': 'String',
+                'StringValue': message['community']
+            },
+            'Recipient': {
+                'DataType': 'String',
+                'StringValue': message['recipient']
+            }
+        },
+        MessageBody=(
+            'New message to {0} from {1}'.format(message['recipient'],message['sender'])
+        )
+    )
 
 @app.route("/msgtoadmin", methods=['GET','POST'])
 def msgToAdmin():
