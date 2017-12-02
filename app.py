@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
 from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm, commuityUpdateForm
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 import json
 import psycopg2
@@ -20,6 +21,16 @@ from flask_mail import Mail,Message
 from threading import Thread
 from flask_pagedown import PageDown
 import boto3
+import redis
+
+r = redis.StrictRedis(host='localhost',port=6379,db=0)
+
+ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png']
+FILE_CONTENT_TYPES = { # these will be used to set the content type of S3 object. It is binary by default.
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png'
+}
 
 from bson.objectid import ObjectId
 
@@ -562,6 +573,12 @@ def profile():
         user.contact_number = form.contact.data
         user.firstName = form.firstname.data
         user.lastName = form.lastname.data
+        if form.photo.data:
+            f = form.photo.data
+            filename = secure_filename(f.filename)
+            res = upload_to_s3(f)
+            if res != 'error':
+                user.imageUrl = res
         db.session.commit()
         print ("User Updated")
         flash('Your changes have been saved.')
@@ -1258,19 +1275,26 @@ def billing():
     return response
 
 
-def upload():
-    print('Upload')
-    BUCKET_NAME = 'img-community-bucket'
-
-    data = open('bitmoji.png', 'rb')
-
-    s3 = boto3.resource(
-    's3',
-    aws_access_key_id=ACCESS_KEY_ID,
-    aws_secret_access_key=ACCESS_SECRET_KEY,
-    config=Config(signature_version='s3v4')
-    )
-    s3.Bucket(BUCKET_NAME).put_object(Key='bitmoji.png', Body=data)
+def upload_to_s3(file):
+    bucket_name = 'image-cmpe281-social-network'
+    ext = file.filename.split('.')[1]
+    file.filename = current_user.username + '.'+ ext
+    s3 = boto3.client('s3')
+    try:
+        s3.upload_fileobj(
+            file,
+            bucket_name,
+            file.filename,
+            ExtraArgs={
+                "ACL": "public-read",
+                "ContentType": file.content_type
+            }
+        )
+    except Exception as e:
+        # This is a catch all exception, edit this part to fit your needs.
+        print("Something Happened: ", e)
+        return 'error'
+    return 'https://s3-us-west-2.amazonaws.com/image-cmpe281-social-network/{}'.format(file.filename)
 
 print ("Done")
 

@@ -76,9 +76,12 @@
         {%if session.username == user.username%}
         <section id="settings" class="hidden">
             <h3>Edit Your Profile</h3>
-            <form action="/profile" method="POST">
+            <form action="/profile" method="POST" enctype="multipart/form-data">
                 {{form.hidden_tag()}}
                 <table class="table table-striped">
+                    <tr>
+                        <td>{{wtf.form_field(form.photo)}}</td>
+                    </tr>
                     <tr>
                         <td> {{wtf.form_field(form.email)}}</td>
                     </tr>

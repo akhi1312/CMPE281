@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError, TextAreaField, SubmitField
+from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import InputRequired, Email, Length, NumberRange, DataRequired, Regexp
 from flask_pagedown.fields import PageDownField
 
@@ -24,7 +25,7 @@ class RegistrationForm(FlaskForm):
 
 class EditForm(FlaskForm):
     """User Edit Form"""
-
+    photo = FileField('Change ProfilePic',validators=[FileAllowed(['jpg', 'png'], 'Images only!')])
     email = StringField('Email:',validators=[DataRequired(),Email(message='Invalid email'),Length(5,50,'Email must be of atleast more than 5 characters')])
     firstname = StringField('Firstname:', validators=[DataRequired(), Length(1,30,'Firstname must be between 1 to 30 characters')])
     lastname = StringField('Lastname:', validators=[DataRequired(), Length(1,30,'Lastname must be between 1 to 30 characters')])
