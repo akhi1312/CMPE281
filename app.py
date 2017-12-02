@@ -22,18 +22,7 @@ from threading import Thread
 from flask_pagedown import PageDown
 import boto3
 import redis
-
-r = redis.StrictRedis(host='localhost',port=6379,db=0)
-
-ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png']
-FILE_CONTENT_TYPES = { # these will be used to set the content type of S3 object. It is binary by default.
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'png': 'image/png'
-}
-
 from bson.objectid import ObjectId
-
 from markdown import markdown
 from decorator import admin_required
 import bleach
@@ -65,7 +54,7 @@ app.config['SOCIALNETWORK_ADMIN'] = 'socialnetwork281@gmail.com'
 pagedown.init_app(app)
 mail = Mail(app)
 
-
+r = redis.StrictRedis(host='localhost',port=6379,db=0)
 
 listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
 
@@ -107,7 +96,6 @@ def confirm(token):
 
 @app.before_request
 def before_request():
-    print request.endpoint
     if current_user.is_authenticated \
             and current_user.status != 'approved'\
             and request.endpoint not in listOfAuthAPIs \
@@ -116,7 +104,6 @@ def before_request():
 
 @app.route('/unconfirmed')
 def unconfirmed():
-    print current_user.status
     if current_user.status == 'approved' or current_user.is_anonymous:
         return redirect(url_for('home'))
     return render_template('_unconfirmed.html')
@@ -175,7 +162,6 @@ def admin_community():
 def admin_post():
     adminData = getStats()
     listOfPost = mongo.posts.find({})
-
     return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost)
 
 

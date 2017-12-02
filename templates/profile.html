@@ -39,7 +39,11 @@
                 </tr>
                 <tr>
                     <td>Location</td>
+                    {% if user.city %}
+                    <td><a href="http://maps.google.com/?q={{ user.city }}">{{ user.city }}</a></td>
+                    {% else %}
                     <td>{{ user.city }}</td>
+                    {% endif %}
                 </tr>
                 </tbody>
             </table>
