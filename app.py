@@ -53,8 +53,30 @@ app.config['FLASKY_MAIL_SENDER'] = 'Admin <socialnetwork281@gmail.com>'
 app.config['SOCIALNETWORK_ADMIN'] = 'socialnetwork281@gmail.com'
 pagedown.init_app(app)
 mail = Mail(app)
+# Create SQS client
+sqs = boto3.client('sqs')
+queue_url = 'https://sqs.us-west-2.amazonaws.com/431210553064/mails-queue'
 
-r = redis.StrictRedis(host='localhost',port=6379,db=0)
+redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+
+def initializeRedis():
+    redis_cache.flushall()
+    communities = Community.query.filter_by(status='Approved').all()
+    for community in communities:
+        redis_cache.sadd('communities',community.ID)
+        moderator = UserModerator.query.filter_by(communityID = community.ID).first().moderator
+        redis_cache.set(community.ID,moderator)
+        print redis_cache.get(community.ID)
+    print redis_cache.smembers('communities')
+    users = User.query.all()
+    for user in users:
+        if user.username != 'admin':
+            usercommunities = UserCommunity.query.filter_by(userID = user.username).all()
+            for _comm in usercommunities:
+                redis_cache.sadd(user.username,_comm.communityID)
+            print redis_cache.smembers(user.username)
+    
+initializeRedis()                
 
 listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
 
@@ -68,7 +90,6 @@ def convertIntoHTML(value):
 def send_async_email(app, msg):
     with app.app_context():
         mail.send(msg)
-
 
 def send_email(to, subject, template, **kwargs):
     msg = Message(app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject,
@@ -161,9 +182,10 @@ def admin_community():
 @admin_required
 def admin_post():
     adminData = getStats()
-    listOfPost = mongo.posts.find({})
+    listOfPost =[]
+    listOfPost.extend(mongo.posts.find({}))
+    listOfPost.sort(key=lambda r: r['posted_date'], reverse=True)
     return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost)
-
 
 #edit community
 @app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
@@ -173,6 +195,9 @@ def edit_community(community_id):
     communityID = int(community_id)
     print "Printing Comuity"
     communityDetails = Community.query.filter_by(ID=communityID).first()
+    # implementing redis caching for faster response
+    if redis_cache.get(communityID):
+        moderator = redis_cache.get(communityID)
     moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
     userObj = UserCommunity.query.filter_by(communityID=communityID).all()
     members = []
@@ -182,8 +207,6 @@ def edit_community(community_id):
     print members
     current_moderator = [member for member in members if member[1] == moderator]
     print moderator
-    print current_moderator
-    print current_moderator[0][0]
     form = commuityUpdateForm(members,moderator=current_moderator[0][0])
     if form.validate_on_submit():
         communityDetails.name = form.name.data.lower()
@@ -201,6 +224,7 @@ def edit_community(community_id):
             if not checkAsModeratorForOtherCommunity(moderator):
                 User.query.filter_by(username=moderator).first().role = 'user'
             db.session.commit()
+            redis_cache.set(communityID,new_moderator)
         return redirect(url_for('admin_community'))
     else:
         communityDetails = Community.query.filter_by(ID=communityID).first()
@@ -219,7 +243,6 @@ def checkAsModeratorForOtherCommunity(moderatorUserName):
         return True
     else:
         return False
-
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
@@ -540,8 +563,30 @@ def profilefrnd(username):
     userposts = mongo.posts.find({ "author": username })
     userFriends = getUserFriends(username)
     user = User.query.filter_by(username=username).first()
-    form = EditForm(request.form)
-    return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
+    form = EditForm()
+    if form.validate_on_submit():
+        print ("Inside User Updated")
+        user.email = form.email.data
+        user.contact_number = form.contact.data
+        user.firstName = form.firstname.data
+        user.lastName = form.lastname.data
+        if form.photo.data:
+            f = form.photo.data
+            filename = secure_filename(f.filename)
+            res = upload_to_s3(f)
+            if res != 'error':
+                user.imageUrl = res
+                updatePosts
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('profile'))
+    else:
+        form.email.data = user.email
+        form.contact.data = user.contact_number
+        form.firstname.data = user.firstName
+        form.lastname.data = user.lastName
+        print ("Inside else User Updated")
+    return render_template('profile.html', user = user , posts = userposts , userFriends = userFriends,form=form)
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -552,7 +597,6 @@ def profile():
     user = User.query.filter_by(username=username).first()
     for friends in userFriends:
         print friends
-
     form = EditForm()
     if form.validate_on_submit():
         print ("Inside User Updated")
@@ -647,7 +691,7 @@ def approveCommunity(communityId):
     # communityDetails = Community.query.filter_by(name = communityName).first()
     communityDetails = Community.query.filter_by(ID=communityId).first()
     created_by = communityDetails.created_by
-    reqUser = User.query.filter_by(username=craeted_by).first()
+    reqUser = User.query.filter_by(username=created_by).first()
     user_comm = UserCommunity(userID=created_by,
                         communityID=communityId)
     user_mod = UserModerator(communityID=communityId,
@@ -660,6 +704,9 @@ def approveCommunity(communityId):
     db.session.add(user_comm)
     db.session.add(user_mod)
     db.session.commit()
+    redis_cache.set(communityId,reqUser.username)
+    redis_cache.sadd('communities',communityId)
+    redis_cache.sadd(reqUser.username,communityId)
     return redirect(url_for('admin'))
 
 #api to join a community
@@ -674,6 +721,7 @@ def joinCommunity():
     UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.add(user_comm)
     db.session.commit()
+    redis_cache.sadd(userID,communityID)
     communityName = (Community.query.filter_by(ID=communityID).first()).name
     message = 'Hi Moderator, This is to inform that '+current_user.username+' has joined '+communityName+' community. User email is '+ current_user.email +' .'
     subject = 'New Member Joined to '+ communityName + ' community.'
@@ -683,8 +731,7 @@ def joinCommunity():
     return json.dumps(data)
 
 
-# Delete Communit modified Akhilesh
-
+# Delete Community modified Akhilesh
 @app.route('/delete_community', methods = ['POST'])
 def deleteCommunity():
     communityID = request.form['id']
@@ -772,6 +819,7 @@ def leaveCommunity():
     else:
         UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
         db.session.commit()
+        redis_cache.srem(userID,communityID)
         communityName = (Community.query.filter_by(ID=communityID).first()).name
         message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
         subject = 'Member left '+ communityName + ' community.'
@@ -783,27 +831,39 @@ def leaveCommunity():
 
 #api to get communities a user is member of
 def getUserCommunities():
-    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communities = redis_cache.smembers(current_user.username)
+    #redis
+    # communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityNames = []
     ids = []
     for item in communities:
-        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
-        ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
+        communityNames.append((Community.query.filter_by(ID=item).first()).name)
+        ids.append(item)
+        #redis
+        # communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+        # ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
     return [(k,v) for k,v in zip(ids, communityNames)]
 
 #api to get full community details for a joined user community
 @app.route('/user_joined_community', methods = ['GET'])
 def getCommunityDetailsJoined():
-    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communities = redis_cache.smembers(current_user.username)
+    # communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityObj = []
     moderators = []
     response = []
     users = []
     for community in communities:
-        x = UserCommunity.query.filter_by(communityID = community.communityID).all()
+        #redis
+        x = UserCommunity.query.filter_by(communityID = community).all()
         users.append(len(x))
-        communityObj.append(Community.query.filter_by(ID = community.communityID).first())
-        moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
+        communityObj.append(Community.query.filter_by(ID = community).first())
+        nameOfModerator = redis_cache.get(community)
+        moderators.append(nameOfModerator)
+        # x = UserCommunity.query.filter_by(communityID = community.communityID).all()
+        # users.append(len(x))
+        # communityObj.append(Community.query.filter_by(ID = community.communityID).first())
+        # moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
     for obj in communityObj:
         data = {
         "id" : obj.ID,
@@ -819,18 +879,23 @@ def getCommunityDetailsJoined():
 #api to get full community details for a unjoined user community
 @app.route('/user_unjoined_community', methods = ['GET'])
 def getCommunityDetailsUnjoined():
-    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
-    totalCommunities = Community.query.filter_by(status = 'Approved').all()
+    communities = redis_cache.smembers(current_user.username)
+    totalCommunities = redis_cache.smembers('communities')
+    #redis
+    # communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    # totalCommunities = Community.query.filter_by(status = 'Approved').all()
     requestedCommunities = UserRequestedCommunity.query.filter_by(userID=current_user.username).all()
-    jid = set()
-    tid = set()
+    # jid = set()
+    # tid = set()
     rid = set()
+    jid = communities
+    tid = totalCommunities
     for community in requestedCommunities:
         rid.add(community.communityID)
-    for community in communities:
-        jid.add(community.communityID)
-    for community in totalCommunities:
-        tid.add(community.ID)
+    # for community in communities:
+    #     jid.add(community.communityID)
+    # for community in totalCommunities:
+    #     tid.add(community.ID)
     unjoined_temp =  tid - jid
     unjoined = unjoined_temp - rid
     moderators = []
@@ -841,7 +906,12 @@ def getCommunityDetailsUnjoined():
         x = UserCommunity.query.filter_by(communityID = id).all()
         users.append(len(x))
         communityObj.append(Community.query.filter_by(ID = id).first())
-        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+        name_moderator = redis_cache.get(id)
+        moderators.append(name_moderator)
+        # x = UserCommunity.query.filter_by(communityID = id).all()
+        # users.append(len(x))
+        # communityObj.append(Community.query.filter_by(ID = id).first())
+        # moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
     for obj in communityObj:
         data = {
         "id" : obj.ID,
@@ -870,7 +940,13 @@ def getCommunityDetailsRequested():
         x = UserCommunity.query.filter_by(communityID = id).all()
         users.append(len(x))
         communityObj.append(Community.query.filter_by(ID = id).first())
-        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+        name_moderator = redis_cache.get(id)
+        moderators.append(name_moderator)
+        #redis
+        # x = UserCommunity.query.filter_by(communityID = id).all()
+        # users.append(len(x))
+        # communityObj.append(Community.query.filter_by(ID = id).first())
+        # moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
     for obj in communityObj:
         data = {
         "id" : obj.ID,
@@ -893,19 +969,24 @@ def deleteCommunity(communityID):
     mongo.get_collection('posts').delete_many({"category": name})
     Community.query.filter_by(ID=communityID).delete()
     db.session.commit()
+    redis_cache.delete(communityID)
+    redis_cache.srem('communities',communityID)
 
 #api to get posts filter by user
 @app.route('/get_user_posts', methods = ['GET'])
 def getPostsByUser():
     userID = current_user.username
-    communities = UserCommunity.query.filter_by(userID=userID).all()
+    # communities = UserCommunity.query.filter_by(userID=userID).all()
+    communities = redis_cache.smembers(userID)
     posts = mongo.posts
     generalPosts = []
     communityPosts = []
     communityNames = []
     response = []
     for item in communities:
-        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+        communityNames.append((Community.query.filter_by(ID=item).first()).name)
+        #redis
+        # communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
     for name in communityNames:
         communityPosts.extend(posts.find({ "category": name }))
     for post in communityPosts:
@@ -976,7 +1057,9 @@ def community(community_id):
     postFinal.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in postFinal:
         post['_id'] = str(post['_id'])
-    moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
+    moderator = redis_cache.get(community_id)
+    #redis
+    # moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
     response = {
     "communityObj" : communityObj,
     "posts" : postFinal,
@@ -995,10 +1078,13 @@ def getUserFriends(username = None):
         userID = current_user.username
     else:
         userID = username
-    userCommunity = UserCommunity.query.filter_by(userID = userID).all()
+    userCommunity = redis_cache.smembers(userID)
+    #redis
+    # userCommunity = UserCommunity.query.filter_by(userID = userID).all()
     friends = set()
     for item in userCommunity:
-        l = UserCommunity.query.filter_by(communityID = item.communityID).all()
+        l = UserCommunity.query.filter_by(communityID = item).all()
+        # l = UserCommunity.query.filter_by(communityID = item.communityID).all()
         for user in l:
             friends.add(user.userID)
     current = {userID}
@@ -1284,8 +1370,6 @@ def upload_to_s3(file):
         return 'error'
     return 'https://s3-us-west-2.amazonaws.com/{}/{}'.format(bucket_name,file.filename)
 
-print ("Done")
-
 @app.route("/msgtomoderator/<communityID>",methods = ['GET','POST'])
 def msgToModerator(communityID):
     moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
@@ -1306,13 +1390,26 @@ def msgToModerator(communityID):
         return redirect(url_for('community',community_id=communityID))
     return render_template('_messageTemplate.html',form=form, moderator=moderator, community=communityID)
 
+@app.route("/msgtoadmin", methods=['GET','POST'])
+def msgToAdmin():
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        print form.message.data
+        print form.subject.data
+        messageToAdmin = {
+            'subject': form.subject.data,
+            'msg': form.message.data,
+            'sender': current_user.username,
+            'community': 'NA',
+            'recipient': 'admin'
+        }
+        # mongo.mod_messages.insert_one(messageToAdmin)
+        send_to_queue(messageToAdmin)
+        flash('Your Message has been delievered to the Admin')
+        return redirect(url_for('home'))
+    return render_template('_messageTemplate.html',form=form, moderator='admin')
+
 def send_to_queue(message):
-
-    # Create SQS client
-    sqs = boto3.client('sqs')
-
-    queue_url = 'https://sqs.us-west-2.amazonaws.com/431210553064/mails-queue'
-
     # Send message to SQS queue
     response = sqs.send_message(
         QueueUrl=queue_url,
@@ -1343,25 +1440,6 @@ def send_to_queue(message):
         )
     )
 
-@app.route("/msgtoadmin", methods=['GET','POST'])
-def msgToAdmin():
-    form = ExternalMessageForm()
-    if form.validate_on_submit():
-        print form.message.data
-        print form.subject.data
-        messageToAdmin = {
-            'subject': form.subject.data,
-            'msg': form.message.data,
-            'sender': current_user.username,
-            'recipient': 'admin',
-            'timestamp': datetime.datetime.utcnow()
-        }
-        mongo.mod_messages.insert_one(messageToAdmin)
-        flash('Your Message has been delievered to the Admin')
-        return redirect(url_for('home'))
-    return render_template('_messageTemplate.html',form=form, moderator='admin')
-
-
 # def createAdmin():
 #     admin = User(username='admin',
 #                     firstName='admin',
@@ -1376,4 +1454,4 @@ def msgToAdmin():
 #     db.session.commit()
 
 if __name__ == '__main__':
-    app.run(debug = True,threaded=True)
+    app.run(debug = False,threaded=True)

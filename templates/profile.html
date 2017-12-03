@@ -2,11 +2,9 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% block title %}{{user.username}}'s Profile{% endblock %}
 {% block page_content %}
-
-
 <div id="w">
     <div id="content" class="clearfix">
-        <div id="userphoto"><img src={{current_user.gravatar(size=256)}} alt="default avatar" width="100px"
+        <div id="userphoto"><img src={{user.gravatar(size=256)}} alt="default avatar" width="100px"
                                  height="100px"></div>
         <span><h1>{{user.firstName | capitalize}} </h1> </span>
 
@@ -62,7 +60,7 @@
                 <!--<p> User have no recent activity to show </p>-->
             <!--</div>-->
             <!--{% endfor %}-->
-            {% include '_posts.html' %}
+            {% include '_activities.html' %}
         </section>
 
         <section id="friends" class="hidden">
@@ -77,10 +75,10 @@
             </ul>
             {% endfor %}
         </section>
-        {%if session.username == user.username%}
+        {%if current_user.username == user.username%}
         <section id="settings" class="hidden">
             <h3>Edit Your Profile</h3>
-            <form action="/profile" method="POST" enctype="multipart/form-data">
+            <form action="/profile/{{current_user.username}}" method="POST" enctype="multipart/form-data">
                 {{form.hidden_tag()}}
                 <table class="table table-striped">
                     <tr>

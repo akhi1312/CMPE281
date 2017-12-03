@@ -25,10 +25,15 @@
         </div>
         {% include '_comments.html' %}
         <div class="post-footer">
-            <a href="{{ url_for('home') }}">
+            <a onclick="goBack()">
                 <span class="label label-default">Return</span>
             </a>
         </div>
     </div>
 </div>
+<script>
+        function goBack() {
+             window.history.back();
+        }
+    </script>
 {% endblock %}

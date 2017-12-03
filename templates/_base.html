@@ -77,7 +77,7 @@
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated %}
                 <li><a href="/mails"> <i class="fa fa-envelope" aria-hidden="true"></i> Mails </a></li>
-                <li><a href="/profile">Hi {{ current_user.username }}</a></li>
+                <li><a href="/profile/{{current_user.username}}">Hi {{ current_user.username }}</a></li>
                 <li><a href="{{ url_for('logout') }}">Log Out <i class="fa fa-sign-out" aria-hidden="true"></i></a></li>
                 {% else %}
                 <li><a href="{{ url_for('new_user')}}"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a>

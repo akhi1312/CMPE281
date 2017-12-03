@@ -1,0 +1,60 @@
+<ul class="posts">
+        {% for post in posts %}
+        <li class="post">
+            <div class="inline" style="display:inline-block">
+                <a href="{{'/profile/%s'%post.author}}"> <img src="{{ post.authorImage }}" style="width: 64px; border-radius: 50%;">
+                </a>
+            </div>
+            <div class = "inline" style="width:100%;padding-right:5px;">
+            <div>
+                <a href="{{'/profile/%s'%post.author}}">
+                    {{ post.author}}
+                </a>
+                <div class="post-date">
+                        {{ moment(post.posted_date).fromNow() }}
+                </div>
+            </div>
+            <span class="post-title">{{post.title}}</span>
+                <span class="post-category">
+                        {{post.category}}
+                </span>
+                {% if not post.disabled %}
+                <div class="post-body">{{post.contentHTML | safe}}
+                    <div class="post-footer">
+                        {% if current_user.username == moderator and current_user.username != post.author %}
+                        <a data-id={{post._id}} onclick="Disable(this)">
+                            <span class="label label-danger"><i class="fa fa-ban"
+                                                                aria-hidden="true"></i> Disable</span>
+                        </a>
+                        {% endif %}
+                        {% if current_user.username == post.author %}
+                        <a href="{{ url_for('editPost', id=post._id) }}">
+                            <span class="label label-primary"><i class="fa fa-pencil-square-o"
+                                                                 aria-hidden="true"></i> Edit</span>
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('post', id=post._id) }}">
+                            <span class="label label-default"><i class="fa fa-comments-o" aria-hidden="true"></i> Comments {{post.comments | count}}</span>
+                        </a>
+                    </div>
+                </div>
+                {% elif current_user.username == moderator and current_user.username != post.author%}
+                <div class="post-body"> This post has been disabled by the moderator.
+                    <div class="post-footer">
+                        <a data-id={{post._id}} onclick="Enable(this)">
+                            <span class="label label-success"><i class="fa fa-toggle-on" aria-hidden="true"></i> Enable</span>
+                        </a>
+                    </div>
+                </div>
+                {%else%}
+                <div class="post-body"> This post has been disabled by the moderator.
+                    <div class="post-footer">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="clearBoth"></div>
+        </li>
+        {% endfor %}
+    </ul>
+

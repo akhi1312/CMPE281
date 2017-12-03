@@ -8,11 +8,9 @@ db = client['socialcommunity']
 mod_messages = db.mod_messages
 #create sqs client
 sqs= boto3.client('sqs')
-
-
 queue_url = 'https://sqs.us-west-2.amazonaws.com/431210553064/mails-queue'
 
-def rec():
+def read_from_queue():
     #Recieve msg from sqs queue
     response = sqs.receive_message(
         QueueUrl=queue_url,
@@ -52,7 +50,7 @@ def rec():
         print 'No message in Queue'
     
     print time.ctime()
-    threading.Timer(10,rec).start()
+    threading.Timer(5,read_from_queue).start()
 
-rec()
+read_from_queue()
 
