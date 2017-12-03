@@ -20,6 +20,7 @@
         <div class="row" style="margin-left:5px">
             <form action="/messages/{{selectedUser}}" method="POST">
                 <div style="margin-left:5px">
+                    <p style="margin-bottom:0px;font-size: 14px;font-weight: 1.25;">Send a message to {{selectedUser}} </p>
                     {{ wtf.quick_form(form) }}
                 </div>
             </form>
@@ -44,6 +45,7 @@
         </div>
         {% endfor %} {% else %}
         <h2>Select A Friend to Message</h2>
+        <img src="{{ url_for('static', filename='images/messaging.png') }}">
         {% endif %}
     </div>
 </div>
