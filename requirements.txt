@@ -29,4 +29,4 @@ flask-httpauth==3.2.3
 flask-moment==0.5.2
 flask-pagedown==0.2.2
 markdown==2.6.9
-bleach-2.1.1
+bleach==2.1.1
