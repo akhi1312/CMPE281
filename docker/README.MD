@@ -16,5 +16,6 @@ Install docker-compose
 Run containers
 
 1. cd <CMPE281>/docker/
-2. docker-compose up -d
-3. Containers started running at port 8080, 8081
+2. Go to folder web1 and web2 put the private key as id_rsa for git to clone
+3. docker-compose up -d
+4. Containers started running at port 8080, 8081
