@@ -8,7 +8,7 @@
 {% block page_content %} {% from "includes/_formhelpers.html" import render_field %}
 <div class="row" style="padding-left:5px">
     <div class="col-md-3 col-xs-4 " style="text-align:center;padding-right:0px;">
-        <div class="affix">
+        <div class="affix" style="width: 22.5%;">
             <img src={{current_user.gravatar(size=256)}} alt="John" style="width:25%; border-radius: 50%; margin:auto;">
             <h3>{{current_user.username}}</h3>
             {% if current_user.aboutMe %}
@@ -34,6 +34,12 @@
                     {% endfor %}
                 </ul>
             </div>
+            {% if current_user.role == 'moderator' %}
+            <br/>
+            <div>
+                <a class="btn btn-default" href="/msgtoadmin">Message to Admin</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -64,7 +70,7 @@
             {% for post in posts %}
             <li class="post">
                 <div class="inline" style="display:inline-block">
-                    <a href="{{'/profile/%s'%post.author}}"> <img src="{{ post.authorImage }}"
+                    <a href="{{'/profile/%s'%post.author}}"> <img src="{{ usersPic[post.author] }}"
                                                                   style="width: 64px; border-radius: 50%;">
                     </a>
                 </div>

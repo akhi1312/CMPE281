@@ -1,48 +1,38 @@
-{% extends "_base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
-{% block title %}
-{% if selectedUser %}
- Messaging with {{selectedUser}}
-{% else %}
-Select a Friend to Message
-{% endif %}
-{% endblock %}
-{% block page_content %}
+{% extends "_base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block title %} {% if selectedUser %} Messaging with
+{{selectedUser}} {% else %} Select a Friend to Message {% endif %} {% endblock %} {% block page_content %}
 <div class=row>
     <div class="col-md-3 col-xs-4 " style="text-align:center; padding-right:0px;">
-            Other Moderators:
+        <div class="affix" style="width: 22.5%;">
+            <strong>Moderators:</strong> 
             <hr/>
             <ul class="listCommunities">
-                {% if resp|length > 0 %}
-                {% for moderator in resp %}
-                {% if current_user.username != moderator.Moderator.username %}
+                {% if resp|length > 0 %} {% for moderator in resp %} {% if current_user.username != moderator.Moderator.username %}
                 <li class="btntype">
-                    <a href="{{'/messageToOtherCommunity/%s'%moderator.Moderator.username}}"><img src={{moderator.Moderator.gravatar(size=256)}} alt="John"
-                                     style="width:25px; border-radius: 50%;"> {{moderator.Moderator.firstName | capitalize}}
-                        {{moderator.Moderator.lastName | capitalize}}</a>
+                    <a href="{{'/messageToOtherCommunity/%s'%moderator.CommunityID}}">
+                        <img src={{moderator.Moderator.gravatar(size=256)}} alt="John" style="width:25px; border-radius: 50%;"> {{moderator.CommunityName | capitalize}} ({{moderator.Moderator.username}})</a>
                 </li>
-                {% endif %}
-                {% endfor %}
-                {% else %}
-                <h2> There is no Other Communitites to Contact.</h2>
+                {% endif %} {% endfor %} {% else %}
+                <h2> There is no other Communitites to Contact.</h2>
                 {% endif %}
             </ul>
+        </div>
     </div>
     <div class="col-md-8 " style="border-left: 1px solid;">
         {% if selectedUser %}
-        <div class = "row" style="margin-left:5px">
-        <form action="/messageToOtherCommunity/{{selectedUser}}" method="POST">
-            <div style="margin-left:5px">
-                {{ wtf.quick_form(form) }}
-            </div>
-        </form>
-        {% else %}
-            {% if resp | length > 0 %}
+        <div class="row" style="margin-left:5px">
+            <form action="/messageToOtherCommunity/{{selectedCommunity}}" method="POST">
+                <div class="page-header">
+                    <h1>Send Message to {{selectedUser}}</h1>
+                </div>
+                <div style="margin-left:5px">
+                    {{ wtf.quick_form(form) }}
+                </div>
+            </form>
+            {% else %} {% if resp | length > 0 %}
             <h2>Select A Friend to Message</h2>
             {% else %}
             <h2>No one to talk...</h2>
-            {% endif %}
-        {% endif %}
+            {% endif %} {% endif %}
         </div>
     </div>
 </div>

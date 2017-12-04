@@ -1,18 +1,24 @@
 {% extends "_base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block page_content %}
 <div class="row">
     <div class="col-md-3 col-xs-4 " style="text-align:center; padding-right:0px;">
-        <div class="affix">
-                <img src="../static/images/avatar.png" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
+        <div class="affix" style="width: 22.5%;">
+                <img src="{{communityObj.gravatar(size=256)}}" alt="John" style="width:25%; border-radius: 50%; margin:auto;">
                 <h2>{{communityObj.name}}</h2>
                 <h5>{{communityObj.description}}</h5>
                 <h6>{{communityObj.address}}</h6>
-                <h6>{{communityObj.city}} - {{communityObj.zip_code}}</h6>
+                <h6><a href="http://maps.google.com/?q={{ communityObj.city }}">{{ communityObj.city }} - {{communityObj.zip_code}}</a></h6>
             <br/>
             <div class="managedBy">
                 <h4>ManagedBy: </h4>
                 <div >
                     <a href="{{'/profile/%s'%moderator}}"> {{moderator}}</a>
                  </div>
+                {% if current_user.role != 'moderator' %}
+                <br/>
+                <div>
+                    <a class="btn btn-default" href="/msgtomoderator/{{communityObj.ID}}">Message to {{moderator}}</a>
+                </div>
+                {% endif %}
             </div>
             <hr/>
             <div>
@@ -34,7 +40,7 @@
         </div>
     </div>
 
-    <div class="col-md-8">
+    <div class="col-md-8" style="border-left: 1px solid black">
         <div class="row" style="overflow: auto;">
             {% include '_posts.html' %}
         </div>

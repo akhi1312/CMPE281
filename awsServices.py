@@ -8,7 +8,7 @@ def send_email(message, subject):
             'CcAddresses': [
             ],
             'ToAddresses': [
-                'rmodi10@gmail.com',
+                'socialnetwork281@gmail.com',
             ],
         },
         Message={

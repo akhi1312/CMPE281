@@ -2,7 +2,7 @@
     {% for comment in post.comments %}
     <li class="comment">
         <div class="comment-thumbnail">
-             <img src="{{ comment.author.imageUrl }}" style="width: 25px; border-radius: 50%;">
+             <img src="{{ usersPic[comment.author.name] }}" style="width: 25px; border-radius: 50%;">
         </div>
         <div class="comment-content">
             <div class="comment-date">{{ moment(comment.posted).fromNow() }}</div>

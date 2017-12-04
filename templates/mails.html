@@ -1,0 +1,33 @@
+{% extends "_base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}
+Mails
+{% endblock %}
+{% block page_content %}
+<div class=row>
+    <div class="col-md-8 col-md-offset-2">
+        <div class="page-header">
+            <h1>Mails to {{current_user.username}}</h1>
+        </div>
+        {% for msg in mails %}
+        <div>
+            <a href="{{'/profile/%s'%msg.sender}}">
+                <strong>From:</strong>  {{ msg.sender}} 
+            </a>
+            <div class="post-date">
+                {{ moment(msg.timestamp).format('LLLL') }}
+            </div>
+        </div>
+        <span class="post-title"><strong>Subject:</strong> {{msg.subject}}</span>
+        <div class="post-body"><strong>Message:</strong>  {{msg.msg | safe}}
+            <div class="post-footer">
+                    <a href="/reply/{{msg._id}}">
+                    <span class="label label-default"><i class="fa fa-reply" aria-hidden="true"></i> Reply </span>
+                </a>
+            </div>
+        </div>
+        <hr/>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
