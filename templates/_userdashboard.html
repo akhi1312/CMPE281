@@ -70,7 +70,7 @@
             {% for post in posts %}
             <li class="post">
                 <div class="inline" style="display:inline-block">
-                    <a href="{{'/profile/%s'%post.author}}"> <img src="{{ post.authorImage }}"
+                    <a href="{{'/profile/%s'%post.author}}"> <img src="{{ usersPic[post.author] }}"
                                                                   style="width: 64px; border-radius: 50%;">
                     </a>
                 </div>

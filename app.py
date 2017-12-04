@@ -70,13 +70,34 @@ def initializeRedis():
     print redis_cache.smembers('communities')
     users = User.query.all()
     for user in users:
+        redis_cache.sadd('listusers',user.username)
         if user.username != 'admin':
             usercommunities = UserCommunity.query.filter_by(userID = user.username).all()
             for _comm in usercommunities:
                 redis_cache.sadd(user.username,_comm.communityID)
             print redis_cache.smembers(user.username)
     
-initializeRedis()                
+initializeRedis()
+
+def author_images():
+    userObjs = User.query.all()
+    for user in userObjs:
+        if user.imageUrl:
+            imagePath = user.imageUrl
+        else:
+            url = 'http://www.gravatar.com/avatar'
+            hash = user.gravatar_hash()
+            imagePath = '{url}/{hash}?s=100&d=identicon&r=g'.format(
+                url=url, hash=hash)
+        print user.username + imagePath
+        mongo.author_images.insert_one({
+            'username': user.username,
+            'imagePath': imagePath
+        })
+        key = 'img_'+user.username
+        redis_cache.set(key,imagePath)
+        print redis_cache.get(key)
+author_images()
 
 listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
 
@@ -185,7 +206,8 @@ def admin_post():
     listOfPost =[]
     listOfPost.extend(mongo.posts.find({}))
     listOfPost.sort(key=lambda r: r['posted_date'], reverse=True)
-    return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost)
+    usersImage = getAllProfilePictures()
+    return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost, usersPic=usersImage)
 
 #edit community
 @app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
@@ -535,7 +557,7 @@ def home():
     form = ArticleForm(categories, category=0)
     display_posts = getPostsByUser()
     communities = getUserCommunities()
-    moderatorCommunityList = userModeratorCommunityList()
+    # moderatorCommunityList = userModeratorCommunityList()
     if form.validate_on_submit():
         print 'inside add post'
         title = form.title.data
@@ -551,7 +573,18 @@ def home():
         form.category.data = ""
         display_posts = getPostsByUser()
     moderatorCommunityList = userModeratorCommunityList()
-    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities, moderatorCommunityList = moderatorCommunityList)
+    usersImage = getAllProfilePictures()
+    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities, moderatorCommunityList = moderatorCommunityList, usersPic = usersImage)
+
+def getAllProfilePictures():
+    members = redis_cache.smembers('listusers')
+    usersImage = {}
+    for member in members:
+        key = 'img_'+member
+        usersImage[member] = redis_cache.get(key)
+    print usersImage
+    return usersImage
+getAllProfilePictures()
 
 @app.before_request
 def before_request():
@@ -564,6 +597,7 @@ def profilefrnd(username):
     userFriends = getUserFriends(username)
     user = User.query.filter_by(username=username).first()
     form = EditForm()
+    usersImage = getAllProfilePictures()
     if form.validate_on_submit():
         print ("Inside User Updated")
         user.email = form.email.data
@@ -576,7 +610,16 @@ def profilefrnd(username):
             res = upload_to_s3(f)
             if res != 'error':
                 user.imageUrl = res
-                updatePosts
+                user_image = mongo.author_images.find_one({'username': username})
+                mongo.author_images.update_one({
+                '_id': user_image['_id']
+                },{
+                '$set': {
+                    'imagePath': res
+                    }
+                }, upsert=False)
+                key = 'img_'+username
+                redis_cache.set(key,res)
         db.session.commit()
         flash('Your changes have been saved.')
         return redirect(url_for('profile'))
@@ -586,7 +629,7 @@ def profilefrnd(username):
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', user = user , posts = userposts , userFriends = userFriends,form=form)
+    return render_template('profile.html', user = user , posts = userposts , userFriends = userFriends,form=form, usersPic=usersImage)
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -598,6 +641,7 @@ def profile():
     for friends in userFriends:
         print friends
     form = EditForm()
+    usersImage = getAllProfilePictures()
     if form.validate_on_submit():
         print ("Inside User Updated")
         user.email = form.email.data
@@ -610,6 +654,16 @@ def profile():
             res = upload_to_s3(f)
             if res != 'error':
                 user.imageUrl = res
+                user_image = mongo.author_images.find({'username': username})
+                mongo.author_images.update_one({
+                '_id': user_image['_id']
+                },{
+                '$set': {
+                    'imagePath': res
+                    }
+                }, upsert=False)
+                key = 'img_'+username
+                redis_cache.set(key,res)
         db.session.commit()
         print ("User Updated")
         flash('Your changes have been saved.')
@@ -620,7 +674,7 @@ def profile():
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', form=form , posts = userposts , userFriends = userFriends ,user = user)
+    return render_template('profile.html', form=form , posts = userposts , userFriends = userFriends ,user = user, usersPic=usersImage)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -1068,8 +1122,9 @@ def community(community_id):
     "users" : users
     }
     print response['users']
+    usersImage = getAllProfilePictures()
     return render_template('_community.html',communityObj = response['communityObj'],posts = response['posts'], moderator = response['moderator'],
-    date = response['creation_date'], members = response['users'])
+    date = response['creation_date'], members = response['users'], usersPic = usersImage)
 
 #api to get user friends
 @app.route('/get_user_friends', methods=['GET'])
@@ -1112,6 +1167,11 @@ def deleteUser(userID):
     else:
         UserCommunity.query.filter_by(userID=userID).delete()
         User.query.filter_by(username=userID).delete()
+        redis_cache.delete(userID)
+        redis_cache.srem('listusers',userID)
+        mongo.author_images.remove( {'username': userID} )
+        key = 'img_'+userID
+        redis_cache.delete(key)
         db.session.commit()
 
 
@@ -1148,7 +1208,8 @@ def post(id):
             flash('Your comment has been added')
     _id = str(id)
     post = mongo.posts.find_one({ "_id": ObjectId(_id) })
-    return render_template('_post.html', post=post, commentForm=form)
+    usersImage = getAllProfilePictures()
+    return render_template('_post.html', post=post, commentForm=form, usersPic = usersImage)
 
 
 @app.route('/editpost/<id>', methods=['GET', 'POST'])
