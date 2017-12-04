@@ -66,8 +66,8 @@ def initializeRedis():
         redis_cache.sadd('communities',community.ID)
         moderator = UserModerator.query.filter_by(communityID = community.ID).first().moderator
         redis_cache.set(community.ID,moderator)
-        print redis_cache.get(community.ID)
-    print redis_cache.smembers('communities')
+        # print redis_cache.get(community.ID)
+    # print redis_cache.smembers('communities')
     users = User.query.all()
     for user in users:
         redis_cache.sadd('listusers',user.username)
@@ -75,7 +75,7 @@ def initializeRedis():
             usercommunities = UserCommunity.query.filter_by(userID = user.username).all()
             for _comm in usercommunities:
                 redis_cache.sadd(user.username,_comm.communityID)
-            print redis_cache.smembers(user.username)
+            # print redis_cache.smembers(user.username)
     
 initializeRedis()
 
@@ -89,14 +89,14 @@ def author_images():
             hash = user.gravatar_hash()
             imagePath = '{url}/{hash}?s=100&d=identicon&r=g'.format(
                 url=url, hash=hash)
-        print user.username + imagePath
+        # print user.username + imagePath
         mongo.author_images.insert_one({
             'username': user.username,
             'imagePath': imagePath
         })
         key = 'img_'+user.username
         redis_cache.set(key,imagePath)
-        print redis_cache.get(key)
+        # print redis_cache.get(key)
 author_images()
 
 listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
@@ -346,21 +346,30 @@ def new_user():
 @app.route('/add_post', methods = ['POST'])
 def add_post(category,title,content,content_html):
     posts = mongo.posts
-    impagePath = None
-    if not current_user.imageUrl:
-        impagePath = current_user.gravatar()
-    else:
-        impagePath = current_user.imageUrl
+    # impagePath = None
+    # if not current_user.imageUrl:
+    #     impagePath = current_user.gravatar()
+    # else:
+    #     impagePath = current_user.imageUrl
     post_data = {
         'category':category.lower(),
         'title': title,
         'content': content,
         'contentHTML': content_html,
         'author': current_user.username,
-        'authorImage': impagePath,
         'posted_date': datetime.datetime.utcnow(),
         'comments': []
     }
+    # post_data = {
+    #     'category':category.lower(),
+    #     'title': title,
+    #     'content': content,
+    #     'contentHTML': content_html,
+    #     'author': current_user.username,
+    #     # 'authorImage': impagePath,
+    #     'posted_date': datetime.datetime.utcnow(),
+    #     'comments': []
+    # }
     result = posts.insert_one(post_data)
     print 'One post: {0}'.format(result.inserted_id)
 
@@ -552,11 +561,11 @@ def get_all_community():
 @app.route('/home',methods = ['GET','POST'])
 @login_required
 def home():
-    categories = getUserCommunities()
+    _categories = getUserCommunities()
+    categories = [(int(_cat[0]),_cat[1])for _cat in _categories]
     categories.append((0,'General'))
+    print categories
     form = ArticleForm(categories, category=0)
-    display_posts = getPostsByUser()
-    communities = getUserCommunities()
     # moderatorCommunityList = userModeratorCommunityList()
     if form.validate_on_submit():
         print 'inside add post'
@@ -570,8 +579,9 @@ def home():
         add_post(category,title,body,content_html)
         form.title.data = ""
         form.body.data = ""
-        form.category.data = ""
-        display_posts = getPostsByUser()
+        form.category.data = 0
+    display_posts = getPostsByUser()
+    communities = getUserCommunities()
     moderatorCommunityList = userModeratorCommunityList()
     usersImage = getAllProfilePictures()
     return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities, moderatorCommunityList = moderatorCommunityList, usersPic = usersImage)
@@ -1052,7 +1062,6 @@ def getPostsByUser():
     response.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in response:
         post['_id'] = str(post['_id'])
-        print post['authorImage']
     return response
 
 #api to get the statistics
