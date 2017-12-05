@@ -58,8 +58,8 @@ mail = Mail(app)
 sqs = boto3.client('sqs')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
-redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
-#redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
+#redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
 
 
 def initializeRedis():
@@ -1101,7 +1101,10 @@ def deleteCommunity(communityID):
     UserCommunity.query.filter_by(communityID = communityID).delete()
     UserModerator.query.filter_by(communityID=communityID).delete()
     obj = UserModerator.query.filter_by(moderator=mod_name).first()
-    if not obj:
+    print "Inside Del Moderator "
+    print obj
+    if obj is  None:
+        "Inside If del moderator"
         User.query.filter_by(username=mod_name).role='user'
         
     communityObj = Community.query.filter_by(ID=communityID).first()
