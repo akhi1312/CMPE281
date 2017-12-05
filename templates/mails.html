@@ -11,6 +11,7 @@ Mails
         </div>
         {% for msg in mails %}
         <div>
+            <img src="{{ usersPic[msg.sender] }}" style="width: 25px; border-radius: 50%;">
             <a href="{{'/profile/%s'%msg.sender}}">
                 <strong>From:</strong>  {{ msg.sender}} 
             </a>
@@ -19,6 +20,7 @@ Mails
             </div>
         </div>
         <span class="post-title"><strong>Subject:</strong> {{msg.subject}}</span>
+        <span class="post-category">{{msg.community}}</span>
         <div class="post-body"><strong>Message:</strong>  {{msg.msg | safe}}
             <div class="post-footer">
                     <a href="/reply/{{msg._id}}">

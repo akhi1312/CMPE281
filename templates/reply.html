@@ -10,6 +10,7 @@ Mails
             <h1>Reply to {{mail.sender}}</h1>
         </div>
         <div>
+            <img src="{{ usersPic[mail.sender] }}" style="width: 25px; border-radius: 50%;">
             <a href="{{'/profile/%s'%mail.sender}}">
                 <strong>From:</strong>  {{ mail.sender}} 
             </a>
@@ -18,6 +19,7 @@ Mails
             </div>
         </div>
         <span class="post-title"><strong>Subject:</strong> {{mail.subject}}</span>
+        <span class="post-category">{{mail.community}}</span>
         <div class="post-body"><strong>Message:</strong>  {{mail.msg | safe}}</div>
         <hr/>
         <div>

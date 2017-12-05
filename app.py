@@ -502,7 +502,8 @@ def mails():
     for msg in messages:
         mails.append(msg)
     mails.sort(key=lambda r: r['timestamp'], reverse=True)
-    return render_template('mails.html',mails = mails)
+    usersPic = getAllProfilePictures()
+    return render_template('mails.html',mails = mails,usersPic= usersPic)
 
 @app.route('/reply/<mailid>',methods=['GET','POST'])
 def getMail(mailid):
@@ -531,7 +532,8 @@ def getMail(mailid):
         )
         flash('Your reply has been sent')
         return redirect(url_for('mails'))
-    return render_template('reply.html',form = form, mail = mail)
+    usersPic = getAllProfilePictures()
+    return render_template('reply.html',form = form, mail = mail, usersPic=usersPic)
 
 @app.route('/sendmessages', methods=['POST'])
 def saveMessage():
@@ -969,6 +971,7 @@ def getUserCommunities():
     communityNames = []
     ids = []
     for item in communities:
+        print item
         communityNames.append((Community.query.filter_by(ID=item).first()).name)
         ids.append(item)
         #redis
@@ -1512,6 +1515,7 @@ def upload_to_s3(file):
 @app.route("/msgtomoderator/<communityID>",methods = ['GET','POST'])
 def msgToModerator(communityID):
     moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    communityName = Community.query.filter_by(ID=communityID).first().name
     form = ExternalMessageForm()
     if form.validate_on_submit():
         print form.message.data
@@ -1520,7 +1524,7 @@ def msgToModerator(communityID):
             'subject': form.subject.data,
             'msg': form.message.data,
             'sender': current_user.username,
-            'community': communityID,
+            'community': communityName,
             'recipient': moderator,
         }
         send_to_queue(message)
