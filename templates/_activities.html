@@ -32,6 +32,9 @@
                             <span class="label label-primary"><i class="fa fa-pencil-square-o"
                                                                  aria-hidden="true"></i> Edit</span>
                         </a>
+                        <a data-id={{post._id}} onclick="deletePost(this)">
+                            <span class="label label-danger"><i class="fa fa-trash-o" aria-hidden="true"></i> Delete</span>
+                        </a>
                         {% endif %}
                         <a href="{{ url_for('post', id=post._id) }}">
                             <span class="label label-default"><i class="fa fa-comments-o" aria-hidden="true"></i> Comments {{post.comments | count}}</span>
@@ -57,4 +60,5 @@
         </li>
         {% endfor %}
     </ul>
+    
 

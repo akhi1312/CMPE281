@@ -54,12 +54,19 @@ class commuityUpdateForm(FlaskForm):
         super(commuityUpdateForm, self).__init__(*args, **kwargs)
         self.moderator.choices = members
 
-    name = StringField('Name:', validators=[DataRequired(), Length(4,50,'Community Name must be between 4 to 50 characters')])
     desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
     address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
     city = StringField('City:', validators=[DataRequired(), Length(max=30)])
     zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
     moderator = SelectField('Moderator:', coerce=int)
+
+class commuityUpdateFormForModerator(FlaskForm):
+    """Community Update Form"""
+
+    desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
+    address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
+    city = StringField('City:', validators=[DataRequired(), Length(max=30)])
+    zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
 
 # Post Form Class
 class ArticleForm(FlaskForm):

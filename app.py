@@ -3,7 +3,7 @@ from flask_moment import Moment
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm, commuityUpdateForm
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm, commuityUpdateForm, commuityUpdateFormForModerator
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
@@ -16,7 +16,7 @@ from index import app, db, mongo,logger
 from models import Community, User, UserCommunity, UserModerator, UserRequestedCommunity
 import  myexception
 from flask_httpauth import HTTPBasicAuth
-from awsServices import send_email, sendMessage
+from awsServices import sendEmail, sendMessage, sendDeclineMessage
 from flask_mail import Mail,Message
 from threading import Thread
 from flask_pagedown import PageDown
@@ -55,7 +55,7 @@ pagedown.init_app(app)
 mail = Mail(app)
 # Create SQS client
 sqs = boto3.client('sqs')
-queue_url = 'https://sqs.us-west-2.amazonaws.com/431210553064/mails-queue'
+queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
 redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
 
@@ -209,6 +209,33 @@ def admin_post():
     usersImage = getAllProfilePictures()
     return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost, usersPic=usersImage)
 
+@app.route('/edit_community/<community_id>', methods = ['GET','POST'])
+@login_required
+def edit_community_moderator(community_id):
+    communityID = int(community_id)
+    print "Printing Comuity"
+    communityDetails = Community.query.filter_by(ID=communityID).first()
+    # implementing redis caching for faster response
+    if redis_cache.get(communityID):
+        moderator = redis_cache.get(communityID)
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    userObj = UserCommunity.query.filter_by(communityID=communityID).all()
+    form = commuityUpdateFormForModerator()
+    if form.validate_on_submit():
+        communityDetails.description = form.desc.data
+        communityDetails.address = form.address.data
+        communityDetails.city = form.city.data
+        communityDetails.zip_code = form.zip_code.data
+        db.session.commit()
+        return redirect(url_for('community',community_id=community_id))
+    else:
+        communityDetails = Community.query.filter_by(ID=communityID).first()
+        form.desc.data = communityDetails.description
+        form.address.data = communityDetails.address
+        form.city.data = communityDetails.city
+        form.zip_code.data = communityDetails.zip_code
+        return render_template('_edit_community_moderator.html',form=form ,column = communityID, name = communityDetails.name)
+
 #edit community
 @app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
 @login_required
@@ -231,8 +258,7 @@ def edit_community(community_id):
     print moderator
     form = commuityUpdateForm(members,moderator=current_moderator[0][0])
     if form.validate_on_submit():
-        communityDetails.name = form.name.data.lower()
-        communityDetails.desc = form.desc.data
+        communityDetails.description = form.desc.data
         communityDetails.address = form.address.data
         communityDetails.city = form.city.data
         communityDetails.zip_code = form.zip_code.data
@@ -250,7 +276,6 @@ def edit_community(community_id):
         return redirect(url_for('admin_community'))
     else:
         communityDetails = Community.query.filter_by(ID=communityID).first()
-        form.name.data = communityDetails.name
         form.desc.data = communityDetails.description
         form.address.data = communityDetails.address
         form.city.data = communityDetails.city
@@ -294,8 +319,8 @@ def new_community():
         db.session.commit()
         message = 'Hi Admin, This is to inform that '+current_user.username+' has created a new commmunity named as '+name+'. User email is '+ current_user.email +' . Please Approve it.'
         subject = 'New Community '+ name + ' acceptance mail.'
-        # send_email(message, subject)
-        # sendMessage(current_user.contact_number,current_user.username, name)
+        sendEmail(message, subject)
+        sendMessage(current_user.contact_number,current_user.username, name)
         flash('Community ' + name + ' has been created. Waiting for admin approval.' )
         return redirect(url_for('home'))
     return render_template('_newCommunity.html',form=form)
@@ -382,8 +407,9 @@ def messages():
 
 @app.route('/messageToOtherModerator',methods=['GET'])
 def messageModerator():
-    communities = Community.query.all()
-    communityId = [community.ID for community in communities]
+    # communities = Community.query.all()
+    # communityId = [community.ID for community in communities]
+    communityId = redis_cache.smembers('communities')
     response = []
     for _id in communityId:
         _moderator = UserModerator.query.filter_by(communityID=_id).first()
@@ -400,7 +426,7 @@ def messageModerator():
 @app.route('/messageToOtherCommunity/<communityID>', methods=['GET','POST'])
 @login_required
 def externalCommunityMessage(communityID):
-    if current_user.role != 'moderator':
+    if current_user.role == 'user' :
         flash('You are not an moderator..Only moderator can view this page..')
         return redirect(url_for('home'))
     moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
@@ -423,8 +449,9 @@ def externalCommunityMessage(communityID):
         form.subject.data = ''
         form.message.data = ''
         flash('your message has been sent')
-    communities = Community.query.all()
-    communityId = [community.ID for community in communities]
+    # communities = Community.query.all()
+    # communityId = [community.ID for community in communities]
+    communityId = redis_cache.smembers('communities')
     response = []
     for _id in  communityId:
         _moderator = UserModerator.query.filter_by(communityID = _id).first()
@@ -608,16 +635,20 @@ def profilefrnd(username):
     user = User.query.filter_by(username=username).first()
     form = EditForm()
     usersImage = getAllProfilePictures()
+    print "Outside gorm validate"
     if form.validate_on_submit():
         print ("Inside User Updated")
         user.email = form.email.data
         user.contact_number = form.contact.data
         user.firstName = form.firstname.data
         user.lastName = form.lastname.data
+        print "Outside form Photo"
         if form.photo.data:
             f = form.photo.data
             filename = secure_filename(f.filename)
             res = upload_to_s3(f)
+            print "S3 Bucket URL "
+            print res
             if res != 'error':
                 user.imageUrl = res
                 user_image = mongo.author_images.find_one({'username': username})
@@ -771,6 +802,21 @@ def approveCommunity(communityId):
     redis_cache.set(communityId,reqUser.username)
     redis_cache.sadd('communities',communityId)
     redis_cache.sadd(reqUser.username,communityId)
+    message = 'Hi '+reqUser.username+', This is to inform that admin has approved a commmunity named as '+communityDetails.name+'. Now you are the moderator of the community.'
+    sendDeclineMessage(reqUser.contact_number,message)
+    return redirect(url_for('admin'))
+
+# Decline Community 
+@app.route('/decline_community/<communityId>', methods = ['GET'])
+def declineCommunity(communityId):
+    # communityName = request.json['name'].lower()
+    communityDetails = Community.query.filter_by(ID=communityId).first()
+    Community.query.filter_by(ID=communityId).delete()
+    created_by = communityDetails.created_by
+    reqUser = User.query.filter_by(username=created_by).first()
+    message = 'Hi '+reqUser.username+', This is to inform that admin has declined a new commmunity named as '+communityDetails.name+'. Sorry...'
+    sendDeclineMessage(reqUser.contact_number,message)
+    db.session.commit()
     return redirect(url_for('admin'))
 
 #api to join a community
@@ -887,7 +933,7 @@ def leaveCommunity():
         communityName = (Community.query.filter_by(ID=communityID).first()).name
         message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
         subject = 'Member left '+ communityName + ' community.'
-        # send_email(message, subject)
+        sendEmail(message, subject)
         data = {
             'status':200
         }
@@ -1055,7 +1101,7 @@ def getPostsByUser():
         communityPosts.extend(posts.find({ "category": name }))
     for post in communityPosts:
         response.append(post)
-    generalPosts.append(posts.find({ "category": "general" }))
+    generalPosts.append(posts.find({ "category": "General" }))
     for item in generalPosts:
         for doc in item:
             response.append(doc)
@@ -1179,6 +1225,7 @@ def deleteUser(userID):
         redis_cache.delete(userID)
         redis_cache.srem('listusers',userID)
         mongo.author_images.remove( {'username': userID} )
+        mongo.posts.remove({'author':userID})
         key = 'img_'+userID
         redis_cache.delete(key)
         db.session.commit()
@@ -1420,7 +1467,7 @@ def billing():
 
 def upload_to_s3(file):
     # bucket_name = 'image-cmpe281-social-network'
-    bucket_name = 'project-281'
+    bucket_name = 'cmpe281smartcommunity'
     ext = file.filename.split('.')[1]
     file.filename = current_user.username + '.'+ ext
     s3 = boto3.client('s3')
@@ -1438,7 +1485,7 @@ def upload_to_s3(file):
         # This is a catch all exception, edit this part to fit your needs.
         print("Something Happened: ", e)
         return 'error'
-    return 'https://s3-us-west-2.amazonaws.com/{}/{}'.format(bucket_name,file.filename)
+    return 'https://s3.amazonaws.com/{}/{}'.format(bucket_name,file.filename)
 
 @app.route("/msgtomoderator/<communityID>",methods = ['GET','POST'])
 def msgToModerator(communityID):
@@ -1481,6 +1528,7 @@ def msgToAdmin():
 
 def send_to_queue(message):
     # Send message to SQS queue
+    print message
     response = sqs.send_message(
         QueueUrl=queue_url,
         MessageAttributes={
@@ -1525,5 +1573,5 @@ def send_to_queue(message):
 
 if __name__ == '__main__':
 
-    app.run(debug = True,threaded=True,host='0.0.0.0',port=3000)
+    app.run(debug = False,threaded=True,host='0.0.0.0',port=3000)
 

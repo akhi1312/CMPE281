@@ -8,7 +8,7 @@ db = client['socialcommunity']
 mod_messages = db.mod_messages
 #create sqs client
 sqs= boto3.client('sqs')
-queue_url = 'https://sqs.us-west-2.amazonaws.com/431210553064/mails-queue'
+queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
 def read_from_queue():
     #Recieve msg from sqs queue

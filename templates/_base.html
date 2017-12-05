@@ -58,7 +58,6 @@
                 {% if current_user.is_authenticated %}
                 {% if g.user.role == 'admin' %}
                 <li><a href="/requestedCommunities">Approve Communitites</a></li>
-                <li><a href="/messages">Messages</a></li>
                 {% else %}
                 {% if g.user.role == 'moderator' %}
                 <li><a href="/requestedtojoincommunitites">Approve Request</a></li>

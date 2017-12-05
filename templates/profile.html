@@ -123,4 +123,24 @@ $(function(){
 });
 
 </script>
+<script>
+        function deletePost(elm) {
+            //  console.log($(elm).attr('data-id'))
+            $.ajax({
+                url: '/delete_post',
+                data: {
+                    id: $(elm).attr('data-id')
+                },
+                type: 'POST',
+                success: function (res) {
+                    var response = $.parseJSON(res)
+                    if (response.status == 200)
+                        location.reload()
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+    </script>
 {% endblock %}

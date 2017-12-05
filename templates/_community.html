@@ -8,6 +8,12 @@
                 <h6>{{communityObj.address}}</h6>
                 <h6><a href="http://maps.google.com/?q={{ communityObj.city }}">{{ communityObj.city }} - {{communityObj.zip_code}}</a></h6>
             <br/>
+            {% if current_user.username == moderator %}
+            <div>
+                <a class="btn btn-default" href="/edit_community/{{communityObj.ID}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Community</a>
+            </div>
+            {% endif %}
+            <br/>
             <div class="managedBy">
                 <h4>ManagedBy: </h4>
                 <div >
