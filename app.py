@@ -1096,13 +1096,14 @@ def getCommunityDetailsRequested():
 
 #method to delete a community
 def deleteCommunity(communityID):
+    UserRequestedCommunity.query.filter_by(communityID=communityID).delete()  
     UserCommunity.query.filter_by(communityID = communityID).delete()
     UserModerator.query.filter_by(communityID=communityID).delete()
     communityObj = Community.query.filter_by(ID=communityID).first()
     name = communityObj.name
     posts = mongo.posts
     mongo.get_collection('posts').delete_many({"category": name})
-    Community.query.filter_by(ID=communityID).delete()
+    Community.query.filter_by(ID=communityID).delete()     
     db.session.commit()
     redis_cache.delete(communityID)
     redis_cache.srem('communities',communityID)
