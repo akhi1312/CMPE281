@@ -5,6 +5,7 @@
         <div class="affix" style="width: 22.5%;">
         <strong> Friends:</strong> 
         <hr/>
+        {% if members|length >0 %}
         <ul class="listCommunities">
             {% for member in members %}
             <li class="btntype">
@@ -13,6 +14,9 @@
             </li>
             {% endfor %}
         </ul>
+        {% else %}
+        <div>No friends to chat.</div>
+        {% endif %}
         </div>
     </div>
     <div class="col-md-8 " style="border-left: 1px solid;">
@@ -43,9 +47,12 @@
             {% endif %}
             <br/>
         </div>
-        {% endfor %} {% else %}
+        {% endfor %} 
+        {% elif members | length> 0 %}
         <h2>Select A Friend to Message</h2>
         <img src="{{ url_for('static', filename='images/messaging.png') }}">
+        {% else %}
+        <h2>Please join communitites</h2>
         {% endif %}
     </div>
 </div>

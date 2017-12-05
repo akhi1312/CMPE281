@@ -58,7 +58,7 @@ mail = Mail(app)
 sqs = boto3.client('sqs')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
-#redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+# redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
 redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
 
 
@@ -78,7 +78,7 @@ def initializeRedis():
             usercommunities = UserCommunity.query.filter_by(userID = user.username).all()
             for _comm in usercommunities:
                 redis_cache.sadd(user.username,_comm.communityID)
-            # print redis_cache.smembers(user.username)
+            print redis_cache.smembers(user.username)
 
 initializeRedis()
 
@@ -192,7 +192,11 @@ def admin():
 def admin_users():
     adminData = getStats()
     users = User.query.order_by((User.joining_date)).all()
-    return render_template('admin_users.html',users=users , adminData=adminData )
+    listUsers =[]
+    for user in users:
+        if user.username != 'admin':
+            listUsers.append(user)
+    return render_template('admin_users.html',users=listUsers , adminData=adminData )
 
 @app.route('/admin_community', methods = ['GET','POST'])
 @login_required
@@ -372,6 +376,7 @@ def new_user():
         })
         key = 'img_'+new_user.username
         redis_cache.set(key,imagePath)
+        redis_cache.sadd('listusers',new_user.username)
         if app.config['SOCIALNETWORK_ADMIN']:
             send_email(app.config['SOCIALNETWORK_ADMIN'], ' New User',
                        '_newuser', user=new_user)
@@ -1104,9 +1109,10 @@ def deleteCommunity(communityID):
     print "Inside Del Moderator "
     print obj
     if obj is  None:
-        "Inside If del moderator"
-        User.query.filter_by(username=mod_name).role='user'
-        
+        print "Inside If del moderator"
+        temp = User.query.filter_by(username=mod_name).first()
+        temp.role = 'user'
+        db.session.commit()
     communityObj = Community.query.filter_by(ID=communityID).first()
     name = communityObj.name
     posts = mongo.posts
@@ -1115,7 +1121,11 @@ def deleteCommunity(communityID):
     db.session.commit()
     redis_cache.delete(communityID)
     redis_cache.srem('communities',communityID)
-    redis_cache.srem(mod_name ,communityID)
+    _users = redis_cache.smembers('listusers')
+    for _user in _users:
+         print redis_cache.smembers(_user)
+         redis_cache.srem(_user ,communityID)
+         print redis_cache.smembers(_user)
 
 #api to get posts filter by user
 @app.route('/get_user_posts', methods = ['GET'])
@@ -1149,7 +1159,7 @@ def getPostsByUser():
 #@app.route('/get_stats', methods = ['GET'])
 def getStats():
     communities = len(Community.query.all())
-    users = len(User.query.all())
+    users = len(User.query.all()) - 1
     post = mongo.posts
     posts = post.find()
     count = 0
@@ -1235,7 +1245,7 @@ def getUserFriends(username = None):
     current = {userID}
     friendList = friends - current
     response = []
-    obj = User.query.filter(User.username.in_(friendList))
+    obj = User.query.filter(User.username.in_(friendList)).all()
     # for item in obj:
     #     data = {
     #     "username" : item.username,
@@ -1606,6 +1616,8 @@ def send_to_queue(message):
 #                     role='admin')
 #     db.session.add(admin)
 #     db.session.commit()
+
+# createAdmin()
 
 if __name__ == '__main__':
     app.run(debug = False,threaded=True,host='0.0.0.0',port=3000)

@@ -26,6 +26,7 @@
             <div>
                 List of Joined Communities:
                 <hr/>
+                {% if communities|length > 0 %}
                 <ul class="listCommunities">
                     {% for community in communities %}
                     <li class="btntype">
@@ -33,6 +34,9 @@
                     </li>
                     {% endfor %}
                 </ul>
+                {% else %}
+                <div>Not joined any community</div>
+                {% endif %}
             </div>
             {% if current_user.role == 'moderator' %}
             <br/>
