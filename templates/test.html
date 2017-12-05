@@ -80,7 +80,7 @@
                       data = {id: response["user"][i]["id"], label: response["user"][i]["name"]}
                       nodes.push(data)
                   }
-                  nodes.push({id:0, label:"admin"})
+                  // nodes.push({id:0, label:"admin"})
 
 // create an array with edges
 var edges = [];
@@ -91,10 +91,10 @@ for (i = 0; i < response["user"].length; i++) {
     // edges.push(data_admin)
     edges.push(data)
 }
-for (i = 0; i < response["community"].length; i++){
-  data_admin = {from: 0, to: response["user"][i]["com"]}
-  edges.push(data_admin)
-}
+// for (i = 0; i < response["community"].length; i++){
+//   data_admin = {from: 0, to: response["user"][i]["com"]}
+//   edges.push(data_admin)
+// }
 
  var container = document.getElementById('graph');
  var data = {

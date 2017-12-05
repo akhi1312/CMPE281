@@ -37,6 +37,7 @@ app = Flask(__name__)
 moment = Moment(app)
 Bootstrap(app)
 app.config['SECRET_KEY'] = os.urandom(32)
+app.config['WTF_CSRF_ENABLED'] = False
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
@@ -1221,4 +1222,6 @@ print ("Done")
 #     db.session.commit()
 
 if __name__ == '__main__':
-    app.run(debug = True,threaded=True, host = "0.0.0.0", port = 80)
+    app.run(debug = True,threaded=True)
+
+#host = "0.0.0.0",
