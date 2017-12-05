@@ -6,7 +6,7 @@
                 <h2>{{communityObj.name}}</h2>
                 <h5>{{communityObj.description}}</h5>
                 <h6>{{communityObj.address}}</h6>
-                <h6><a href="http://maps.google.com/?q={{ communityObj.city }}">{{ communityObj.city }} - {{communityObj.zip_code}}</a></h6>
+                <h6><a href="http://maps.google.com/?q={{ communityObj.city }}" target ="_blank">{{ communityObj.city }} - {{communityObj.zip_code}}</a></h6>
             <br/>
             {% if current_user.username == moderator %}
             <div>

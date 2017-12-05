@@ -57,8 +57,8 @@ mail = Mail(app)
 sqs = boto3.client('sqs')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
-#redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
-redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
+redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+#redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
 
 
 def initializeRedis():
@@ -130,6 +130,7 @@ def send_email(to, subject, template, **kwargs):
 def confirm(token):
     print token
     if current_user.status == 'approved':
+        flash('Your account has been verified..')
         return redirect(url_for('home'))
     if current_user.confirm(token):
         db.session.commit()
@@ -632,7 +633,11 @@ def before_request():
 @app.route('/profile/<username>', methods=['GET', 'POST'])
 @login_required
 def profilefrnd(username):
-    userposts = mongo.posts.find({ "author": username })
+    temp = mongo.posts.find({ "author": username })
+    userposts=[]
+    for post in temp:
+        userposts.append(post)
+    userposts.sort(key=lambda r: r['posted_date'], reverse=True)
     userFriends = getUserFriends(username)
     user = User.query.filter_by(username=username).first()
     form = EditForm()
@@ -1275,7 +1280,8 @@ def post(id):
 def editPost(id):
     _id = str(id)
     post = mongo.posts.find_one({ "_id": ObjectId(_id) })
-    categories = getUserCommunities()
+    _categories = getUserCommunities()
+    categories = [(int(_cat[0]),_cat[1])for _cat in _categories]
     categories.append((0,'General'))
     name = post['category']
     category = Community.query.filter_by(name=name).first()
@@ -1289,12 +1295,11 @@ def editPost(id):
         body = form.body.data
         content_html = convertIntoHTML(body)
         category = dict(categories).get(form.category.data)
-        print body
+        # print body
         post['title'] = title
         post['conntent'] = body
         post['contentHTML'] = content_html
         post['category'] = category
-        flash('The post has been updated.')
         # Below route need to be changed..
         mongo.posts.update_one({
               '_id': post['_id']
