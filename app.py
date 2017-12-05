@@ -58,8 +58,8 @@ mail = Mail(app)
 sqs = boto3.client('sqs')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
-#redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
-redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
+redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+#redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
 
 
 def initializeRedis():
@@ -83,6 +83,7 @@ def initializeRedis():
 initializeRedis()
 
 def author_images():
+    mongo.author_images.remove({})
     userObjs = User.query.all()
     for user in userObjs:
         if user.imageUrl:
@@ -360,6 +361,17 @@ def new_user():
             return render_template('_signup.html', form=form)
         db.session.add(new_user)
         db.session.commit()
+        url = 'http://www.gravatar.com/avatar'
+        hash = new_user.gravatar_hash()
+        imagePath = '{url}/{hash}?s=100&d=identicon&r=g'.format(
+            url=url, hash=hash)
+        # print user.username + imagePath
+        mongo.author_images.insert_one({
+            'username': new_user.username,
+            'imagePath': imagePath
+        })
+        key = 'img_'+new_user.username
+        redis_cache.set(key,imagePath)
         if app.config['SOCIALNETWORK_ADMIN']:
             send_email(app.config['SOCIALNETWORK_ADMIN'], ' New User',
                        '_newuser', user=new_user)
@@ -594,7 +606,7 @@ def get_all_community():
 def home():
     _categories = getUserCommunities()
     categories = [(int(_cat[0]),_cat[1])for _cat in _categories]
-    categories.append((0,'General'))
+    categories.append((0,'general'))
     print categories
     form = ArticleForm(categories, category=0)
     # moderatorCommunityList = userModeratorCommunityList()
@@ -659,6 +671,7 @@ def profilefrnd(username):
             print res
             if res != 'error':
                 user.imageUrl = res
+                print user.imageUrl
                 user_image = mongo.author_images.find_one({'username': username})
                 mongo.author_images.update_one({
                 '_id': user_image['_id']
@@ -669,6 +682,7 @@ def profilefrnd(username):
                 }, upsert=False)
                 key = 'img_'+username
                 redis_cache.set(key,res)
+            print 'checking'
         db.session.commit()
         flash('Your changes have been saved.')
         return redirect(url_for('profile'))
@@ -1109,7 +1123,7 @@ def getPostsByUser():
         communityPosts.extend(posts.find({ "category": name }))
     for post in communityPosts:
         response.append(post)
-    generalPosts.append(posts.find({ "category": "General" }))
+    generalPosts.append(posts.find({ "category": "general" }))
     for item in generalPosts:
         for doc in item:
             response.append(doc)
@@ -1283,7 +1297,7 @@ def editPost(id):
     post = mongo.posts.find_one({ "_id": ObjectId(_id) })
     _categories = getUserCommunities()
     categories = [(int(_cat[0]),_cat[1])for _cat in _categories]
-    categories.append((0,'General'))
+    categories.append((0,'general'))
     name = post['category']
     category = Community.query.filter_by(name=name).first()
     if category:
