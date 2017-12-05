@@ -1,5 +1,5 @@
 import boto3
-def send_email(message, subject):
+def sendEmail(message, subject):
     client = boto3.client('ses')
     response = client.send_email(
         Destination={
@@ -8,7 +8,7 @@ def send_email(message, subject):
             'CcAddresses': [
             ],
             'ToAddresses': [
-                'rmodi10@gmail.com',
+                'socialnetwork281@gmail.com',
             ],
         },
         Message={
@@ -27,7 +27,7 @@ def send_email(message, subject):
                 'Data': subject,
             },
         },
-        Source='rmodi3191@gmail.com',
+        Source='akhilesh.deowanshi@gmail.com',
     )
 
 
@@ -35,3 +35,8 @@ def sendMessage(userContact,userName,communityName):
     client = boto3.client('sns')
     number = '+15105857576'
     client.publish(PhoneNumber = number, Message='New community has been crerated by ' + userName + '. please approve by login on console.' )
+
+def sendDeclineMessage(userContact,message):
+    client = boto3.client('sns')
+    userContact = '+1' +userContact
+    client.publish(PhoneNumber = userContact, Message=message )

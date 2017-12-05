@@ -3,12 +3,10 @@ from flask_moment import Moment
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
-from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm
-from index import app, db, mongo,logger
-from models import Community, User
+from Forms import LoginForm, RegistrationForm, commuityRegistraion, ArticleForm , EditForm, EditArticleForm, CommentForm, ChatForm, ExternalMessageForm, commuityUpdateForm, commuityUpdateFormForModerator
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 import json
 import psycopg2
 import os
@@ -18,15 +16,15 @@ from index import app, db, mongo,logger
 from models import Community, User, UserCommunity, UserModerator, UserRequestedCommunity
 import  myexception
 from flask_httpauth import HTTPBasicAuth
-from awsServices import send_email, sendMessage
+from awsServices import sendEmail, sendMessage, sendDeclineMessage
 from flask_mail import Mail,Message
 from threading import Thread
 from flask_pagedown import PageDown
 import boto3
-
+import redis
 from bson.objectid import ObjectId
-
 from markdown import markdown
+from decorator import admin_required
 import bleach
 
 auth = HTTPBasicAuth()
@@ -56,20 +54,66 @@ app.config['FLASKY_MAIL_SENDER'] = 'Admin <socialnetwork281@gmail.com>'
 app.config['SOCIALNETWORK_ADMIN'] = 'socialnetwork281@gmail.com'
 pagedown.init_app(app)
 mail = Mail(app)
+# Create SQS client
+sqs = boto3.client('sqs')
+queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
+#redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
+
+
+def initializeRedis():
+    redis_cache.flushall()
+    communities = Community.query.filter_by(status='Approved').all()
+    for community in communities:
+        redis_cache.sadd('communities',community.ID)
+        moderator = UserModerator.query.filter_by(communityID = community.ID).first().moderator
+        redis_cache.set(community.ID,moderator)
+        # print redis_cache.get(community.ID)
+    # print redis_cache.smembers('communities')
+    users = User.query.all()
+    for user in users:
+        redis_cache.sadd('listusers',user.username)
+        if user.username != 'admin':
+            usercommunities = UserCommunity.query.filter_by(userID = user.username).all()
+            for _comm in usercommunities:
+                redis_cache.sadd(user.username,_comm.communityID)
+            # print redis_cache.smembers(user.username)
+
+initializeRedis()
+
+def author_images():
+    userObjs = User.query.all()
+    for user in userObjs:
+        if user.imageUrl:
+            imagePath = user.imageUrl
+        else:
+            url = 'http://www.gravatar.com/avatar'
+            hash = user.gravatar_hash()
+            imagePath = '{url}/{hash}?s=100&d=identicon&r=g'.format(
+                url=url, hash=hash)
+        # print user.username + imagePath
+        mongo.author_images.insert_one({
+            'username': user.username,
+            'imagePath': imagePath
+        })
+        key = 'img_'+user.username
+        redis_cache.set(key,imagePath)
+        # print redis_cache.get(key)
+author_images()
 
 listOfAuthAPIs = ['login','unconfirmed','logout','sign_up','confirm','resend_confirmation']
 
 allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
                         'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
                         'h1', 'h2', 'h3', 'p']
+
 def convertIntoHTML(value):
     return bleach.linkify(bleach.clean(markdown(value, output_format='html'),tags=allowed_tags, strip=True))
 
 def send_async_email(app, msg):
     with app.app_context():
         mail.send(msg)
-
 
 def send_email(to, subject, template, **kwargs):
     msg = Message(app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + subject,
@@ -97,7 +141,6 @@ def confirm(token):
 
 @app.before_request
 def before_request():
-    print request.endpoint
     if current_user.is_authenticated \
             and current_user.status != 'approved'\
             and request.endpoint not in listOfAuthAPIs \
@@ -106,7 +149,6 @@ def before_request():
 
 @app.route('/unconfirmed')
 def unconfirmed():
-    print current_user.status
     if current_user.status == 'approved' or current_user.is_anonymous:
         return redirect(url_for('home'))
     return render_template('_unconfirmed.html')
@@ -135,18 +177,24 @@ def index():
     return render_template('index.html')
 
 @app.route('/admin', methods = ['GET'])
+@login_required
+@admin_required
 def admin():
     adminData = getStats()
     listOfRequestedCommunitites = getRequestedCommunity()
     return render_template('admin.html', adminData=adminData , listOfRequestedCommunitites=listOfRequestedCommunitites)
 
 @app.route('/admin_users', methods = ['GET','POST'])
+@login_required
+@admin_required
 def admin_users():
     adminData = getStats()
     users = User.query.order_by((User.joining_date)).all()
     return render_template('admin_users.html',users=users , adminData=adminData )
 
 @app.route('/admin_community', methods = ['GET','POST'])
+@login_required
+@admin_required
 def admin_community():
    adminData = getStats()
    # categories = getUserCommunities()
@@ -154,39 +202,97 @@ def admin_community():
    return render_template('admin_community.html',communityDetails=communityDetails, adminData=adminData )
 
 @app.route('/admin_post', methods = ['GET','POST'])
+@login_required
+@admin_required
 def admin_post():
     adminData = getStats()
-    listOfPost = mongo.posts.find({})
+    listOfPost =[]
+    listOfPost.extend(mongo.posts.find({}))
+    listOfPost.sort(key=lambda r: r['posted_date'], reverse=True)
+    usersImage = getAllProfilePictures()
+    return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost, usersPic=usersImage)
 
-    return render_template('admin_post.html',adminData=adminData,listOfPost=listOfPost)
-
-
-#edit community
-@app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
-def edit_community(community_id):
+@app.route('/edit_community/<community_id>', methods = ['GET','POST'])
+@login_required
+def edit_community_moderator(community_id):
     communityID = int(community_id)
     print "Printing Comuity"
     communityDetails = Community.query.filter_by(ID=communityID).first()
-    form = commuityRegistraion()
+    # implementing redis caching for faster response
+    if redis_cache.get(communityID):
+        moderator = redis_cache.get(communityID)
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    userObj = UserCommunity.query.filter_by(communityID=communityID).all()
+    form = commuityUpdateFormForModerator()
     if form.validate_on_submit():
-        communityDetails.name = form.name.data.lower()
-        communityDetails.desc = form.desc.data
+        communityDetails.description = form.desc.data
         communityDetails.address = form.address.data
         communityDetails.city = form.city.data
         communityDetails.zip_code = form.zip_code.data
         db.session.commit()
+        return redirect(url_for('community',community_id=community_id))
+    else:
+        communityDetails = Community.query.filter_by(ID=communityID).first()
+        form.desc.data = communityDetails.description
+        form.address.data = communityDetails.address
+        form.city.data = communityDetails.city
+        form.zip_code.data = communityDetails.zip_code
+        return render_template('_edit_community_moderator.html',form=form ,column = communityID, name = communityDetails.name)
+
+#edit community
+@app.route('/admin/edit_community/<community_id>', methods = ['GET','POST'])
+@login_required
+@admin_required
+def edit_community(community_id):
+    communityID = int(community_id)
+    print "Printing Comuity"
+    communityDetails = Community.query.filter_by(ID=communityID).first()
+    # implementing redis caching for faster response
+    if redis_cache.get(communityID):
+        moderator = redis_cache.get(communityID)
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    userObj = UserCommunity.query.filter_by(communityID=communityID).all()
+    members = []
+    for user in userObj:
+        members.append(user.userID)
+    members = [(k,v) for k,v in enumerate(members)]
+    print members
+    current_moderator = [member for member in members if member[1] == moderator]
+    print moderator
+    form = commuityUpdateForm(members,moderator=current_moderator[0][0])
+    if form.validate_on_submit():
+        communityDetails.description = form.desc.data
+        communityDetails.address = form.address.data
+        communityDetails.city = form.city.data
+        communityDetails.zip_code = form.zip_code.data
+        db.session.commit()
+        new_moderator = dict(members).get(form.moderator.data)
+        print new_moderator
+        if moderator != new_moderator:
+            UserModerator.query.filter_by(communityID=communityID).first().moderator = new_moderator
+            if not checkAsModeratorForOtherCommunity(new_moderator):
+                User.query.filter_by(username=new_moderator).first().role = 'moderator'
+            if not checkAsModeratorForOtherCommunity(moderator):
+                User.query.filter_by(username=moderator).first().role = 'user'
+            db.session.commit()
+            redis_cache.set(communityID,new_moderator)
         return redirect(url_for('admin_community'))
     else:
         communityDetails = Community.query.filter_by(ID=communityID).first()
-        form.name.data = communityDetails.name
         form.desc.data = communityDetails.description
         form.address.data = communityDetails.address
         form.city.data = communityDetails.city
         form.zip_code.data = communityDetails.zip_code
         # form.creation_date.data = communityDetails.creation_date
         # form.created_by.data = communityDetails.created_by
-        return render_template('_edit_community.html',form=form ,column = communityID)
+        return render_template('_edit_community.html',form=form ,column = communityID, name = communityDetails.name)
 
+def checkAsModeratorForOtherCommunity(moderatorUserName):
+    moderatorObj = UserModerator.query.filter_by(moderator = moderatorUserName).first()
+    if moderatorObj:
+        return True
+    else:
+        return False
 
 #create new community
 @app.route('/new_community', methods = ['GET','POST'])
@@ -216,8 +322,8 @@ def new_community():
         db.session.commit()
         message = 'Hi Admin, This is to inform that '+current_user.username+' has created a new commmunity named as '+name+'. User email is '+ current_user.email +' . Please Approve it.'
         subject = 'New Community '+ name + ' acceptance mail.'
-        # send_email(message, subject)
-        # sendMessage(current_user.contact_number,current_user.username, name)
+        sendEmail(message, subject)
+        sendMessage(current_user.contact_number,current_user.username, name)
         flash('Community ' + name + ' has been created. Waiting for admin approval.' )
         return redirect(url_for('home'))
     return render_template('_newCommunity.html',form=form)
@@ -225,7 +331,6 @@ def new_community():
 #create new user
 @app.route('/sign_up', methods = ['GET','POST'])
 def new_user():
-    createAdmin()
     form = RegistrationForm()
     if form.validate_on_submit():
         username = form.username.data.lower()
@@ -269,21 +374,30 @@ def new_user():
 @app.route('/add_post', methods = ['POST'])
 def add_post(category,title,content,content_html):
     posts = mongo.posts
-    impagePath = None
-    if not current_user.imageUrl:
-        impagePath = current_user.gravatar()
-    else:
-        impagePath = current_user.imageUrl
+    # impagePath = None
+    # if not current_user.imageUrl:
+    #     impagePath = current_user.gravatar()
+    # else:
+    #     impagePath = current_user.imageUrl
     post_data = {
         'category':category.lower(),
         'title': title,
         'content': content,
         'contentHTML': content_html,
         'author': current_user.username,
-        'authorImage': impagePath,
         'posted_date': datetime.datetime.utcnow(),
         'comments': []
     }
+    # post_data = {
+    #     'category':category.lower(),
+    #     'title': title,
+    #     'content': content,
+    #     'contentHTML': content_html,
+    #     'author': current_user.username,
+    #     # 'authorImage': impagePath,
+    #     'posted_date': datetime.datetime.utcnow(),
+    #     'comments': []
+    # }
     result = posts.insert_one(post_data)
     print 'One post: {0}'.format(result.inserted_id)
 
@@ -296,8 +410,9 @@ def messages():
 
 @app.route('/messageToOtherModerator',methods=['GET'])
 def messageModerator():
-    communities = Community.query.all()
-    communityId = [community.ID for community in communities]
+    # communities = Community.query.all()
+    # communityId = [community.ID for community in communities]
+    communityId = redis_cache.smembers('communities')
     response = []
     for _id in communityId:
         _moderator = UserModerator.query.filter_by(communityID=_id).first()
@@ -311,27 +426,35 @@ def messageModerator():
         response.append(detailObj)
     return render_template('_externalCommunities.html', resp = response, selectedUser = None)
 
-@app.route('/messageToOtherCommunity/<moderator>', methods=['GET','POST'])
+@app.route('/messageToOtherCommunity/<communityID>', methods=['GET','POST'])
 @login_required
-def externalCommunityMessage(moderator):
-    if current_user.role != 'moderator':
+def externalCommunityMessage(communityID):
+    if current_user.role == 'user' :
         flash('You are not an moderator..Only moderator can view this page..')
         return redirect(url_for('home'))
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    communityName = Community.query.filter_by(ID=communityID).first().name
     form = ExternalMessageForm()
     if form.validate_on_submit():
         print form.subject.data
-        print form.Message.data
-        messages = mongo.messages
+        print form.message.data
+        messages = mongo.mod_messages
         message_data = {
-            'fromUserId': current_user.username,
+            'sender': current_user.username,
             'subject':form.subject.data,
-            'msg': form.Message.data,
-            'toUserId': moderator,
-            'message_date': datetime.datetime.utcnow()
+            'msg': form.message.data,
+            'recipient': moderator,
+            'community': communityName,
+            'timestamp': datetime.datetime.utcnow()
         }
-        result = messages.insert_one(message_data)
-    communities = Community.query.all()
-    communityId = [community.ID for community in communities]
+        # result = messages.insert_one(message_data)
+        send_to_queue(message_data)
+        form.subject.data = ''
+        form.message.data = ''
+        flash('your message has been sent')
+    # communities = Community.query.all()
+    # communityId = [community.ID for community in communities]
+    communityId = redis_cache.smembers('communities')
     response = []
     for _id in  communityId:
         _moderator = UserModerator.query.filter_by(communityID = _id).first()
@@ -342,7 +465,7 @@ def externalCommunityMessage(moderator):
             'Moderator': user
         }
         response.append(detailObj)
-    return render_template('_externalCommunities.html', form = form, resp = response, selectedUser = moderator)
+    return render_template('_externalCommunities.html', form = form, resp = response, selectedUser = moderator, selectedCommunity = communityID)
 
 @app.route('/messages/<username>',methods=['GET', 'POST'])
 def retrieveMessagesOfUser(username):
@@ -358,6 +481,44 @@ def retrieveMessagesOfUser(username):
     for friend in friends:
         print friend
     return render_template('messages.html', members=friends, form = form, selectedUser = username, conversations = convos )
+
+@app.route('/mails', methods=['GET'])
+def mails():
+    mails = []
+    messages = mongo.mod_messages.find({'recipient': current_user.username})
+    for msg in messages:
+        mails.append(msg)
+    mails.sort(key=lambda r: r['timestamp'], reverse=True)
+    return render_template('mails.html',mails = mails)
+
+@app.route('/reply/<mailid>',methods=['GET','POST'])
+def getMail(mailid):
+    mail = mongo.mod_messages.find_one({'_id': ObjectId(str(mailid))})
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        subject = form.subject.data
+        msg = form.message.data
+        message_data = {
+            'sender': current_user.username,
+            'subject':form.subject.data,
+            'msg': form.message.data,
+            'recipient': mail['sender'],
+            'community': mail['community'],
+            'timestamp': datetime.datetime.utcnow()
+        }
+        result = mongo.mod_messages.insert_one(message_data)
+        mongo.mod_messages.update_one(
+        {"_id": ObjectId(str(mailid))},
+        {"$push": {
+            'repliesRef': {
+                        'id': result.inserted_id
+                    }
+                }
+            }
+        )
+        flash('Your reply has been sent')
+        return redirect(url_for('mails'))
+    return render_template('reply.html',form = form, mail = mail)
 
 @app.route('/sendmessages', methods=['POST'])
 def saveMessage():
@@ -420,22 +581,6 @@ def get_messages(person1, person2):
     listOfConversations.sort(key=lambda r: r['message_date'], reverse=True)
     return listOfConversations
 
-#add complaint
-@app.route('/add_complaint', methods = ['POST'])
-def add_complaint():
-    complaints = mongo.complaints
-    complaint_data = {
-        'communityID': request.json['communityID'],
-        'category': request.json['category'],
-        'title': request.json['title'],
-        'content': request.json['content'],
-        'complainee': request.json['complainee'],
-        'posted_date': datetime.datetime.now(),
-        'status':request.json['status']
-    }
-    result = complaints.insert_one(complaint_data)
-    return ('One complaint: {0}'.format(result.inserted_id))
-
 #get all the distict communities
 @app.route('/get_all_community', methods = ['GET'])
 def get_all_community():
@@ -446,12 +591,12 @@ def get_all_community():
 @app.route('/home',methods = ['GET','POST'])
 @login_required
 def home():
-    categories = getUserCommunities()
+    _categories = getUserCommunities()
+    categories = [(int(_cat[0]),_cat[1])for _cat in _categories]
     categories.append((0,'General'))
+    print categories
     form = ArticleForm(categories, category=0)
-    display_posts = getPostsByUser()
-    communities = getUserCommunities()
-    moderatorCommunityList = userModeratorCommunityList()
+    # moderatorCommunityList = userModeratorCommunityList()
     if form.validate_on_submit():
         print 'inside add post'
         title = form.title.data
@@ -464,10 +609,22 @@ def home():
         add_post(category,title,body,content_html)
         form.title.data = ""
         form.body.data = ""
-        form.category.data = ""
-        display_posts = getPostsByUser()
+        form.category.data = 0
+    display_posts = getPostsByUser()
+    communities = getUserCommunities()
     moderatorCommunityList = userModeratorCommunityList()
-    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities, moderatorCommunityList = moderatorCommunityList)
+    usersImage = getAllProfilePictures()
+    return render_template('_userdashboard.html',form=form, posts = display_posts, communities = communities, moderatorCommunityList = moderatorCommunityList, usersPic = usersImage)
+
+def getAllProfilePictures():
+    members = redis_cache.smembers('listusers')
+    usersImage = {}
+    for member in members:
+        key = 'img_'+member
+        usersImage[member] = redis_cache.get(key)
+    print usersImage
+    return usersImage
+getAllProfilePictures()
 
 @app.before_request
 def before_request():
@@ -479,26 +636,78 @@ def profilefrnd(username):
     userposts = mongo.posts.find({ "author": username })
     userFriends = getUserFriends(username)
     user = User.query.filter_by(username=username).first()
-    form = EditForm(request.form)
-    return render_template('profile.html', user = user , userposts = userposts , userFriends = userFriends,form=form)
-
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    username = session['username']
-    userposts = mongo.posts.find({ "author": username })
-    userFriends = getUserFriends()
-    user = User.query.filter_by(username=username).first()
-    for friends in userFriends:
-        print friends
-
-    form = EditForm(request.form)
+    form = EditForm()
+    usersImage = getAllProfilePictures()
+    print "Outside gorm validate"
     if form.validate_on_submit():
         print ("Inside User Updated")
         user.email = form.email.data
         user.contact_number = form.contact.data
         user.firstName = form.firstname.data
         user.lastName = form.lastname.data
+        print "Outside form Photo"
+        if form.photo.data:
+            f = form.photo.data
+            filename = secure_filename(f.filename)
+            res = upload_to_s3(f)
+            print "S3 Bucket URL "
+            print res
+            if res != 'error':
+                user.imageUrl = res
+                user_image = mongo.author_images.find_one({'username': username})
+                mongo.author_images.update_one({
+                '_id': user_image['_id']
+                },{
+                '$set': {
+                    'imagePath': res
+                    }
+                }, upsert=False)
+                key = 'img_'+username
+                redis_cache.set(key,res)
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('profile'))
+    else:
+        form.email.data = user.email
+        form.contact.data = user.contact_number
+        form.firstname.data = user.firstName
+        form.lastname.data = user.lastName
+        print ("Inside else User Updated")
+    return render_template('profile.html', user = user , posts = userposts , userFriends = userFriends,form=form, usersPic=usersImage)
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    username = current_user.username
+    userposts = mongo.posts.find({ "author": username })
+    userFriends = getUserFriends()
+    user = User.query.filter_by(username=username).first()
+    for friends in userFriends:
+        print friends
+    form = EditForm()
+    usersImage = getAllProfilePictures()
+    if form.validate_on_submit():
+        print ("Inside User Updated")
+        user.email = form.email.data
+        user.contact_number = form.contact.data
+        user.firstName = form.firstname.data
+        user.lastName = form.lastname.data
+        if form.photo.data:
+            f = form.photo.data
+            filename = secure_filename(f.filename)
+            res = upload_to_s3(f)
+            if res != 'error':
+                user.imageUrl = res
+                user_image = mongo.author_images.find({'username': username})
+                mongo.author_images.update_one({
+                '_id': user_image['_id']
+                },{
+                '$set': {
+                    'imagePath': res
+                    }
+                }, upsert=False)
+                key = 'img_'+username
+                redis_cache.set(key,res)
         db.session.commit()
         print ("User Updated")
         flash('Your changes have been saved.')
@@ -509,7 +718,7 @@ def profile():
         form.firstname.data = user.firstName
         form.lastname.data = user.lastName
         print ("Inside else User Updated")
-    return render_template('profile.html', form=form , userposts = userposts , userFriends = userFriends ,user = user)
+    return render_template('profile.html', form=form , posts = userposts , userFriends = userFriends ,user = user, usersPic=usersImage)
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -580,7 +789,7 @@ def approveCommunity(communityId):
     # communityDetails = Community.query.filter_by(name = communityName).first()
     communityDetails = Community.query.filter_by(ID=communityId).first()
     created_by = communityDetails.created_by
-    reqUser = User.query.filter_by(username=craeted_by).first()
+    reqUser = User.query.filter_by(username=created_by).first()
     user_comm = UserCommunity(userID=created_by,
                         communityID=communityId)
     user_mod = UserModerator(communityID=communityId,
@@ -592,6 +801,24 @@ def approveCommunity(communityId):
     db.session.add(user)
     db.session.add(user_comm)
     db.session.add(user_mod)
+    db.session.commit()
+    redis_cache.set(communityId,reqUser.username)
+    redis_cache.sadd('communities',communityId)
+    redis_cache.sadd(reqUser.username,communityId)
+    message = 'Hi '+reqUser.username+', This is to inform that admin has approved a commmunity named as '+communityDetails.name+'. Now you are the moderator of the community.'
+    sendDeclineMessage(reqUser.contact_number,message)
+    return redirect(url_for('admin'))
+
+# Decline Community
+@app.route('/decline_community/<communityId>', methods = ['GET'])
+def declineCommunity(communityId):
+    # communityName = request.json['name'].lower()
+    communityDetails = Community.query.filter_by(ID=communityId).first()
+    Community.query.filter_by(ID=communityId).delete()
+    created_by = communityDetails.created_by
+    reqUser = User.query.filter_by(username=created_by).first()
+    message = 'Hi '+reqUser.username+', This is to inform that admin has declined a new commmunity named as '+communityDetails.name+'. Sorry...'
+    sendDeclineMessage(reqUser.contact_number,message)
     db.session.commit()
     return redirect(url_for('admin'))
 
@@ -607,6 +834,7 @@ def joinCommunity():
     UserRequestedCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
     db.session.add(user_comm)
     db.session.commit()
+    redis_cache.sadd(userID,communityID)
     communityName = (Community.query.filter_by(ID=communityID).first()).name
     message = 'Hi Moderator, This is to inform that '+current_user.username+' has joined '+communityName+' community. User email is '+ current_user.email +' .'
     subject = 'New Member Joined to '+ communityName + ' community.'
@@ -616,8 +844,7 @@ def joinCommunity():
     return json.dumps(data)
 
 
-# Delete Communit modified Akhilesh
-
+# Delete Community modified Akhilesh
 @app.route('/delete_community', methods = ['POST'])
 def deleteCommunity():
     communityID = request.form['id']
@@ -705,10 +932,11 @@ def leaveCommunity():
     else:
         UserCommunity.query.filter_by(communityID=communityID, userID=userID).delete()
         db.session.commit()
+        redis_cache.srem(userID,communityID)
         communityName = (Community.query.filter_by(ID=communityID).first()).name
         message = 'Hi Moderator, This is to inform that '+current_user.username+' has left '+communityName+' community. User email is '+ current_user.email +' .'
         subject = 'Member left '+ communityName + ' community.'
-        # send_email(message, subject)
+        sendEmail(message, subject)
         data = {
             'status':200
         }
@@ -716,27 +944,39 @@ def leaveCommunity():
 
 #api to get communities a user is member of
 def getUserCommunities():
-    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communities = redis_cache.smembers(current_user.username)
+    #redis
+    # communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityNames = []
     ids = []
     for item in communities:
-        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
-        ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
+        communityNames.append((Community.query.filter_by(ID=item).first()).name)
+        ids.append(item)
+        #redis
+        # communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+        # ids.append((Community.query.filter_by(ID=item.communityID).first()).ID)
     return [(k,v) for k,v in zip(ids, communityNames)]
 
 #api to get full community details for a joined user community
 @app.route('/user_joined_community', methods = ['GET'])
 def getCommunityDetailsJoined():
-    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    communities = redis_cache.smembers(current_user.username)
+    # communities = UserCommunity.query.filter_by(userID=current_user.username).all()
     communityObj = []
     moderators = []
     response = []
     users = []
     for community in communities:
-        x = UserCommunity.query.filter_by(communityID = community.communityID).all()
+        #redis
+        x = UserCommunity.query.filter_by(communityID = community).all()
         users.append(len(x))
-        communityObj.append(Community.query.filter_by(ID = community.communityID).first())
-        moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
+        communityObj.append(Community.query.filter_by(ID = community).first())
+        nameOfModerator = redis_cache.get(community)
+        moderators.append(nameOfModerator)
+        # x = UserCommunity.query.filter_by(communityID = community.communityID).all()
+        # users.append(len(x))
+        # communityObj.append(Community.query.filter_by(ID = community.communityID).first())
+        # moderators.append(UserModerator.query.filter_by(communityID = community.communityID).first().moderator)
     for obj in communityObj:
         data = {
         "id" : obj.ID,
@@ -752,18 +992,23 @@ def getCommunityDetailsJoined():
 #api to get full community details for a unjoined user community
 @app.route('/user_unjoined_community', methods = ['GET'])
 def getCommunityDetailsUnjoined():
-    communities = UserCommunity.query.filter_by(userID=current_user.username).all()
-    totalCommunities = Community.query.filter_by(status = 'Approved').all()
+    communities = redis_cache.smembers(current_user.username)
+    totalCommunities = redis_cache.smembers('communities')
+    #redis
+    # communities = UserCommunity.query.filter_by(userID=current_user.username).all()
+    # totalCommunities = Community.query.filter_by(status = 'Approved').all()
     requestedCommunities = UserRequestedCommunity.query.filter_by(userID=current_user.username).all()
-    jid = set()
-    tid = set()
+    # jid = set()
+    # tid = set()
     rid = set()
+    jid = communities
+    tid = totalCommunities
     for community in requestedCommunities:
         rid.add(community.communityID)
-    for community in communities:
-        jid.add(community.communityID)
-    for community in totalCommunities:
-        tid.add(community.ID)
+    # for community in communities:
+    #     jid.add(community.communityID)
+    # for community in totalCommunities:
+    #     tid.add(community.ID)
     unjoined_temp =  tid - jid
     unjoined = unjoined_temp - rid
     moderators = []
@@ -774,7 +1019,12 @@ def getCommunityDetailsUnjoined():
         x = UserCommunity.query.filter_by(communityID = id).all()
         users.append(len(x))
         communityObj.append(Community.query.filter_by(ID = id).first())
-        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+        name_moderator = redis_cache.get(id)
+        moderators.append(name_moderator)
+        # x = UserCommunity.query.filter_by(communityID = id).all()
+        # users.append(len(x))
+        # communityObj.append(Community.query.filter_by(ID = id).first())
+        # moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
     for obj in communityObj:
         data = {
         "id" : obj.ID,
@@ -803,7 +1053,13 @@ def getCommunityDetailsRequested():
         x = UserCommunity.query.filter_by(communityID = id).all()
         users.append(len(x))
         communityObj.append(Community.query.filter_by(ID = id).first())
-        moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
+        name_moderator = redis_cache.get(id)
+        moderators.append(name_moderator)
+        #redis
+        # x = UserCommunity.query.filter_by(communityID = id).all()
+        # users.append(len(x))
+        # communityObj.append(Community.query.filter_by(ID = id).first())
+        # moderators.append(UserModerator.query.filter_by(communityID = id).first().moderator)
     for obj in communityObj:
         data = {
         "id" : obj.ID,
@@ -826,31 +1082,35 @@ def deleteCommunity(communityID):
     mongo.get_collection('posts').delete_many({"category": name})
     Community.query.filter_by(ID=communityID).delete()
     db.session.commit()
+    redis_cache.delete(communityID)
+    redis_cache.srem('communities',communityID)
 
 #api to get posts filter by user
 @app.route('/get_user_posts', methods = ['GET'])
 def getPostsByUser():
     userID = current_user.username
-    communities = UserCommunity.query.filter_by(userID=userID).all()
+    # communities = UserCommunity.query.filter_by(userID=userID).all()
+    communities = redis_cache.smembers(userID)
     posts = mongo.posts
     generalPosts = []
     communityPosts = []
     communityNames = []
     response = []
     for item in communities:
-        communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
+        communityNames.append((Community.query.filter_by(ID=item).first()).name)
+        #redis
+        # communityNames.append((Community.query.filter_by(ID=item.communityID).first()).name)
     for name in communityNames:
         communityPosts.extend(posts.find({ "category": name }))
     for post in communityPosts:
         response.append(post)
-    generalPosts.append(posts.find({ "category": "general" }))
+    generalPosts.append(posts.find({ "category": "General" }))
     for item in generalPosts:
         for doc in item:
             response.append(doc)
     response.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in response:
         post['_id'] = str(post['_id'])
-        print post['authorImage']
     return response
 
 #api to get the statistics
@@ -909,7 +1169,9 @@ def community(community_id):
     postFinal.sort(key=lambda r: r['posted_date'], reverse=True)
     for post in postFinal:
         post['_id'] = str(post['_id'])
-    moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
+    moderator = redis_cache.get(community_id)
+    #redis
+    # moderator = UserModerator.query.filter_by(communityID=community_id).first().moderator
     response = {
     "communityObj" : communityObj,
     "posts" : postFinal,
@@ -918,8 +1180,9 @@ def community(community_id):
     "users" : users
     }
     print response['users']
+    usersImage = getAllProfilePictures()
     return render_template('_community.html',communityObj = response['communityObj'],posts = response['posts'], moderator = response['moderator'],
-    date = response['creation_date'], members = response['users'])
+    date = response['creation_date'], members = response['users'], usersPic = usersImage)
 
 #api to get user friends
 @app.route('/get_user_friends', methods=['GET'])
@@ -928,10 +1191,13 @@ def getUserFriends(username = None):
         userID = current_user.username
     else:
         userID = username
-    userCommunity = UserCommunity.query.filter_by(userID = userID).all()
+    userCommunity = redis_cache.smembers(userID)
+    #redis
+    # userCommunity = UserCommunity.query.filter_by(userID = userID).all()
     friends = set()
     for item in userCommunity:
-        l = UserCommunity.query.filter_by(communityID = item.communityID).all()
+        l = UserCommunity.query.filter_by(communityID = item).all()
+        # l = UserCommunity.query.filter_by(communityID = item.communityID).all()
         for user in l:
             friends.add(user.userID)
     current = {userID}
@@ -959,6 +1225,12 @@ def deleteUser(userID):
     else:
         UserCommunity.query.filter_by(userID=userID).delete()
         User.query.filter_by(username=userID).delete()
+        redis_cache.delete(userID)
+        redis_cache.srem('listusers',userID)
+        mongo.author_images.remove( {'username': userID} )
+        mongo.posts.remove({'author':userID})
+        key = 'img_'+userID
+        redis_cache.delete(key)
         db.session.commit()
 
 
@@ -995,7 +1267,8 @@ def post(id):
             flash('Your comment has been added')
     _id = str(id)
     post = mongo.posts.find_one({ "_id": ObjectId(_id) })
-    return render_template('_post.html', post=post, commentForm=form)
+    usersImage = getAllProfilePictures()
+    return render_template('_post.html', post=post, commentForm=form, usersPic = usersImage)
 
 
 @app.route('/editpost/<id>', methods=['GET', 'POST'])
@@ -1103,6 +1376,8 @@ def adminCommunityData():
         firstName = userObj.firstName
         lastName = userObj.lastName
         communityObj = Community.query.filter_by(ID = communityID).first()
+        membersCount = len(UserCommunity.query.filter_by(communityID = communityID).all())
+
         communityName = communityObj.name
         creation_date = communityObj.creation_date
         data = {
@@ -1111,7 +1386,8 @@ def adminCommunityData():
         "firstName" : firstName,
         "lastName" : lastName,
         "communityName" : communityName,
-        "creation_date" : creation_date
+        "creation_date" : creation_date,
+        "count": membersCount
         }
         response.append(data)
     return response
@@ -1192,21 +1468,98 @@ def billing():
     return response
 
 
-def upload():
-    print('Upload')
-    BUCKET_NAME = 'img-community-bucket'
+def upload_to_s3(file):
+    # bucket_name = 'image-cmpe281-social-network'
+    bucket_name = 'cmpe281smartcommunity'
+    ext = file.filename.split('.')[1]
+    file.filename = current_user.username + '.'+ ext
+    s3 = boto3.client('s3')
+    try:
+        s3.upload_fileobj(
+            file,
+            bucket_name,
+            file.filename,
+            ExtraArgs={
+                "ACL": "public-read",
+                "ContentType": file.content_type
+            }
+        )
+    except Exception as e:
+        # This is a catch all exception, edit this part to fit your needs.
+        print("Something Happened: ", e)
+        return 'error'
+    return 'https://s3.amazonaws.com/{}/{}'.format(bucket_name,file.filename)
 
-    data = open('bitmoji.png', 'rb')
+@app.route("/msgtomoderator/<communityID>",methods = ['GET','POST'])
+def msgToModerator(communityID):
+    moderator = UserModerator.query.filter_by(communityID=communityID).first().moderator
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        print form.message.data
+        print form.subject.data
+        message = {
+            'subject': form.subject.data,
+            'msg': form.message.data,
+            'sender': current_user.username,
+            'community': communityID,
+            'recipient': moderator,
+        }
+        send_to_queue(message)
+        # mongo.mod_messages.insert_one(message)
+        flash('Your Message has been delievered to the moderator')
+        return redirect(url_for('community',community_id=communityID))
+    return render_template('_messageTemplate.html',form=form, moderator=moderator, community=communityID)
 
-    s3 = boto3.resource(
-    's3',
-    aws_access_key_id=ACCESS_KEY_ID,
-    aws_secret_access_key=ACCESS_SECRET_KEY,
-    config=Config(signature_version='s3v4')
+@app.route("/msgtoadmin", methods=['GET','POST'])
+def msgToAdmin():
+    form = ExternalMessageForm()
+    if form.validate_on_submit():
+        print form.message.data
+        print form.subject.data
+        messageToAdmin = {
+            'subject': form.subject.data,
+            'msg': form.message.data,
+            'sender': current_user.username,
+            'community': 'NA',
+            'recipient': 'admin'
+        }
+        # mongo.mod_messages.insert_one(messageToAdmin)
+        send_to_queue(messageToAdmin)
+        flash('Your Message has been delievered to the Admin')
+        return redirect(url_for('home'))
+    return render_template('_messageTemplate.html',form=form, moderator='admin')
+
+def send_to_queue(message):
+    # Send message to SQS queue
+    print message
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        MessageAttributes={
+            'Subject': {
+                'DataType': 'String',
+                'StringValue': message['subject']
+            },
+            'Msg': {
+                'DataType': 'String',
+                'StringValue': message['msg']
+            },
+            'Sender': {
+                'DataType': 'String',
+                'StringValue': message['sender']
+            },
+            'Community': {
+                'DataType': 'String',
+                'StringValue': message['community']
+            },
+            'Recipient': {
+                'DataType': 'String',
+                'StringValue': message['recipient']
+            }
+        },
+        MessageBody=(
+            'New message to {0} from {1}'.format(message['recipient'],message['sender'])
+        )
     )
-    s3.Bucket(BUCKET_NAME).put_object(Key='bitmoji.png', Body=data)
-
-print ("Done")
 
 # def createAdmin():
 #     admin = User(username='admin',
@@ -1222,6 +1575,4 @@ print ("Done")
 #     db.session.commit()
 
 if __name__ == '__main__':
-    app.run(debug = True,threaded=True)
-
-#host = "0.0.0.0",
+    app.run(debug = False,threaded=True,host='0.0.0.0',port=3000)

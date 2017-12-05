@@ -41,13 +41,15 @@
                         <th>Name</th>
                         <th>Moderator</th>
                         <th>Created</th>
+                        <th>Members</th>
                         <th></th>
                       </tr>
                          {% for comm in communityDetails %}
                       <tr>
                         <td>{{ comm.communityName }}</td>
-                        <td> {{ comm.firstName }} {{ comm.lastName }}</td>
-                        <td>{{ moment(comm.creation_date).format('LLLL') }}</td>
+                        <td> {{ comm.username }} </td>
+                        <td>{{ moment(comm.creation_date).format('LL') }}</td>
+                        <td>{{ comm.count }}</td>
                         <td><a data-id={{comm.communityID}} class="btn btn-danger"  onclick="deleteCommunity(this)">Delete</a> <a href ="/admin/edit_community/{{comm.communityID}}" class="btn btn-primary">Edit</a></span></td>
                        </tr>
                         {% endfor %}

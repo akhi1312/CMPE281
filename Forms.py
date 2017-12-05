@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, IntegerField, SelectField, ValidationError, TextAreaField, SubmitField
+from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import InputRequired, Email, Length, NumberRange, DataRequired, Regexp
 from flask_pagedown.fields import PageDownField
 
@@ -24,7 +25,7 @@ class RegistrationForm(FlaskForm):
 
 class EditForm(FlaskForm):
     """User Edit Form"""
-
+    photo = FileField('Change ProfilePic',validators=[FileAllowed(['jpg', 'png'], 'Images only!')])
     email = StringField('Email:',validators=[DataRequired(),Email(message='Invalid email'),Length(5,50,'Email must be of atleast more than 5 characters')])
     firstname = StringField('Firstname:', validators=[DataRequired(), Length(1,30,'Firstname must be between 1 to 30 characters')])
     lastname = StringField('Lastname:', validators=[DataRequired(), Length(1,30,'Lastname must be between 1 to 30 characters')])
@@ -42,6 +43,26 @@ class EditForm(FlaskForm):
 class commuityRegistraion(FlaskForm):
     """User Registration Form"""
     name = StringField('Name:', validators=[DataRequired(), Length(4,50,'Community Name must be between 4 to 50 characters')])
+    desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
+    address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
+    city = StringField('City:', validators=[DataRequired(), Length(max=30)])
+    zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
+
+class commuityUpdateForm(FlaskForm):
+    """User Registration Form"""
+    def __init__(self, members, *args,**kwargs):
+        super(commuityUpdateForm, self).__init__(*args, **kwargs)
+        self.moderator.choices = members
+
+    desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
+    address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
+    city = StringField('City:', validators=[DataRequired(), Length(max=30)])
+    zip_code = IntegerField('ZipCode:', validators=[DataRequired()])
+    moderator = SelectField('Moderator:', coerce=int)
+
+class commuityUpdateFormForModerator(FlaskForm):
+    """Community Update Form"""
+
     desc = StringField('Description:',validators=[Length(max=256,message='Description should be less than of 256 letters.')])
     address = StringField('Address:', validators=[DataRequired(), Length(4,50)])
     city = StringField('City:', validators=[DataRequired(), Length(max=30)])
@@ -82,5 +103,5 @@ class ChatForm(FlaskForm):
 
 class ExternalMessageForm(FlaskForm):
     subject = StringField('Subject',validators=[DataRequired()])
-    Message = StringField('Message', validators=[DataRequired(), Length(min=1, max=256)])
+    message = TextAreaField('Message', validators=[DataRequired(), Length(min=1, max=256)])
     submit = SubmitField('Send Message')

@@ -30,13 +30,15 @@
                       <tr>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Username</th>
                         <th>Joined</th>
                         <th></th>
                       {% for user in users %}
                       <tr>
-                        <td> {{ user.firstname }} {{ user.lastName }}</td>
+                        <td> {{ user.firstName }} {{ user.lastName }}</td>
                         <td>{{ user.email }} </td>
-                        <td>{{ moment( user.joining_date).format('LLLL') }}</td>
+                          <td> {{ user.username }}</td>
+                        <td>{{ moment( user.joining_date).format('LL') }}</td>
                         <td><a data-id={{user.username}} class="btn btn-danger"  onclick="deleteUser(this)">Delete</a></td>
                       </tr>
                        {% endfor %} 

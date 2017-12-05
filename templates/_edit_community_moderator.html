@@ -8,15 +8,14 @@
         <div class="page-header">
             <h1>Edit {{name}}'s Community</h1>
         </div>
-        <form method="POST" action="/admin/edit_community/{{ column }}">
+        <form method="POST" action="/edit_community/{{ column }}">
             {{form.hidden_tag()}}
             {{wtf.form_field(form.desc)}}
             {{wtf.form_field(form.address)}}
             {{wtf.form_field(form.city)}}
             {{wtf.form_field(form.zip_code)}}
-            {{wtf.form_field(form.moderator)}}
             <div class="row">
-              <div class="col-md-6"> <a class="btn btn-danger btn-block" href="/admin_community">Cancel</a>
+              <div class="col-md-6"> <a class="btn btn-danger btn-block" onclick="goBack()">Cancel</a>
             </div>
             <div class="col-md-6">
               <button class = "btn btn-md btn-primary btn-block" type="submit">Update</button>
@@ -26,4 +25,9 @@
     </div>
   </div>
 </div>
+<script>
+    function goBack() {
+         window.history.back();
+    }
+</script>
 {% endblock %}

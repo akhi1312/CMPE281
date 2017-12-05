@@ -1,81 +1,51 @@
-{% extends "_base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
-{% block title %}
-{% if selectedUser %}
- Messaging with {{selectedUser}}
-{% else %}
-Select a Friend to Message
-{% endif %}
-{% endblock %}
-{% block page_content %}
+{% extends "_base.html" %} {% import "bootstrap/wtf.html" as wtf %} {% block title %} {% if selectedUser %} Messaging with
+{{selectedUser}} {% else %} Select a Friend to Message {% endif %} {% endblock %} {% block page_content %}
 <div class=row>
     <div class="col-md-3 col-xs-4 " style="text-align:center; padding-right:0px;">
-            Friends:
-            <hr/>
-            <ul class="listCommunities">
-                {% for member in members %}
-                <li class="btntype">
-                    <a href="{{'/messages/%s'%member.username}}"><img src={{member.gravatar(size=256)}} alt="John"
-                                     style="width:25px; border-radius: 50%;"> {{member.firstName | capitalize}}
-                        {{member.lastName | capitalize}}</a>
-                </li>
-                {% endfor %}
-            </ul>
+        <div class="affix" style="width: 22.5%;">
+        <strong> Friends:</strong> 
+        <hr/>
+        <ul class="listCommunities">
+            {% for member in members %}
+            <li class="btntype">
+                <a href="{{'/messages/%s'%member.username}}">
+                    <img src={{member.gravatar(size=256)}} alt="John" style="width:25px; border-radius: 50%;"> {{member.firstName | capitalize}} {{member.lastName | capitalize}}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        </div>
     </div>
     <div class="col-md-8 " style="border-left: 1px solid;">
         {% if selectedUser %}
-        <div class = "row" style="margin-left:5px">
-        <form action="/messages/{{selectedUser}}" method="POST">
-            <div style="margin-left:5px">
-                {{ wtf.quick_form(form) }}
-            </div>
-        </form>
+        <div class="row" style="margin-left:5px">
+            <form action="/messages/{{selectedUser}}" method="POST">
+                <div style="margin-left:5px">
+                    <p style="margin-bottom:0px;font-size: 14px;font-weight: 1.25;">Send a message to {{selectedUser}} </p>
+                    {{ wtf.quick_form(form) }}
+                </div>
+            </form>
         </div>
-        <hr/>
+        <hr/> {% for message in conversations %}
+        <div class="row" style="margin-left:2px">
+            {% if message['fromUserId'] == current_user.username %}
+            <div class="pull-right">
 
-            {% for message in conversations %}
-            <div class="row" style="margin-left:2px" >
-                {% if message['fromUserId'] == current_user.username %}
-                 <!--  <div class="message pull-right" > -->
-                    <div class="pull-right">
-
-                    <div class="message " style="padding-left:50px;margin: 0 0 5px 0;background-color:rgba(0,0,255,0.2);">
-                     <p>{{message['msg']}}</p>
-                     <span style="text-align:right;">{{ moment(message['message_date']).fromNow()}}</span>
-                  </div>
-              </div>
-
-               <!--  <div class = "msg-box-sent">
-                    <p class = "pull-right">
-                        {{message['msg']}}
-                    </p>
-                    <p class="pull-right">
-                        {{ moment(message['message_date']).fromNow() }} By {{message['fromUserId']}}
-                    </p>
-                </div> -->
-                {% else %}
-                <!-- <div class="message pull-left"> -->
-                  <div class="pull-left">
-
-                    <div class="message " style="background-color:rgba(0,0,255,0.2);padding-right:50px;margin: 0 0 5px 0;">
-                     <p>{{message['msg']}}</p>
-                     <span>{{ moment(message['message_date']).fromNow()}}</span>
-                  </div>
-              </div>
-                <!-- <div class = "msg-box-received">
-                    <p class = "pull-left">
-                        {{message['msg']}}
-                    </p>
-                    <p class="pull-left">
-                        {{ moment(message['message_date']).fromNow() }} By {{message['fromUserId']}}
-                    </p>
-                </div> -->
-                {% endif %}
-                <br/>
+                <div class="message" style="padding:5px;margin: 0 0 5px 0;background-color:rgba(0,0,255,0.2);border-radius:5%;text-align:right;">
+                    <p><strong style="padding-right:2em">{{message['msg']}}</strong><span>{{ moment(message['message_date']).fromNow()}}</span></p>
+                </div>
             </div>
-            {% endfor %}
-         {% else %}
+            {% else %}
+            <div class="pull-left">
+                <div class="message" style="background-color:rgba(0,255,0,0.2);padding:5px;margin: 0 0 5px 0;border-radius:5%;">
+                        <p><strong style="padding-right:2em">{{message['msg']}}</strong><span>{{ moment(message['message_date']).fromNow()}}</span></p>
+                </div>
+            </div>
+            {% endif %}
+            <br/>
+        </div>
+        {% endfor %} {% else %}
         <h2>Select A Friend to Message</h2>
+        <img src="{{ url_for('static', filename='images/messaging.png') }}">
         {% endif %}
     </div>
 </div>

@@ -4,21 +4,26 @@
 
 {% block head %}
 {{ super() }}
-<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
 <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}"
-    type="image/x-icon">
+      type="image/x-icon">
 <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}"
-    type="image/x-icon">
+      type="image/x-icon">
 <link href="{{url_for('static',filename='css/main.css')}}" rel="stylesheet">
 
 <!--Added By Akhileh for Profile-->
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
-        crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
+      crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
+        integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
         crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
+        integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
         crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+        integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
         crossorigin="anonymous"></script>
 <!--Code Ended-->
 
@@ -36,7 +41,7 @@
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle"
-             data-toggle="collapse" data-target=".navbar-collapse">
+                    data-toggle="collapse" data-target=".navbar-collapse">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -50,18 +55,18 @@
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-              {% if current_user.is_authenticated %}
+                {% if current_user.is_authenticated %}
                 {% if g.user.role == 'admin' %}
                 <li><a href="/requestedCommunities">Approve Communitites</a></li>
-                <li><a href="/messages">Messages</a></li>
                 {% else %}
                 {% if g.user.role == 'moderator' %}
                 <li><a href="/requestedtojoincommunitites">Approve Request</a></li>
                 <li><a href="/messages">Messages</a></li>
                 {%endif%}
-                <li><a href="/profile">Profile</a></li>
+                {% if g.user.role == 'user' %}
                 <li><a href="/messages">Messages</a></li>
-                <li><a href="/new_community">Create Community</a></li>
+                {% endif %}
+                <li><a href="/new_community">Community<i class="fa fa-plus" aria-hidden="true"></i> </a></li>
                 {% endif %}
                 {% if g.user.role != 'user' %}
                 <li><a href="/messageToOtherModerator">Inter Community</a></li>
@@ -70,10 +75,12 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated %}
-                <li><a href="/profile">Hi {{ current_user.username }}</a></li>
+                <li><a href="/mails"> <i class="fa fa-envelope" aria-hidden="true"></i> Mails </a></li>
+                <li><a href="/profile/{{current_user.username}}">Hi {{ current_user.username }}</a></li>
                 <li><a href="{{ url_for('logout') }}">Log Out <i class="fa fa-sign-out" aria-hidden="true"></i></a></li>
                 {% else %}
-                <li><a href="{{ url_for('new_user')}}"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a></li>
+                <li><a href="{{ url_for('new_user')}}"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a>
+                </li>
                 <li><a href="{{ url_for('login') }}"><i class="fa fa-user" aria-hidden="true"></i> Log In</a></li>
                 {% endif %}
             </ul>
@@ -85,18 +92,19 @@
 {% block content %}
 <div class="container-fluid">
     <div class="container">
-    {% for message in get_flashed_messages() %}
+        {% for message in get_flashed_messages() %}
         <div class="alert alert-warning" id="flashMessage">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             {{ message }}
         </div>
-    {% endfor %}
+        {% endfor %}
     </div>
     {% block page_content %}{% endblock %}
 </div>
 <script>
      setTimeout(function() {
             $('#flashMessage').fadeOut('fast');
-            }, 3000);
+            }, 1000);
+
 </script>
 {% endblock %}
