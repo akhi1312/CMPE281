@@ -58,8 +58,8 @@ mail = Mail(app)
 sqs = boto3.client('sqs')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/507614993775/mails-queue'
 
-redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
-#redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
+#redis_cache = redis.StrictRedis(host='localhost',port=6379,db=0)
+redis_cache = redis.StrictRedis(host='redis-community.nm0e1t.0001.use1.cache.amazonaws.com',port=6379,db=0)
 
 
 def initializeRedis():
