@@ -10,7 +10,7 @@
             <h1>Post</h1>
         </div>
         <div class="post-title">{{post.title}}</div>
-        <div class="post-body">{{post.content | safe}}</div>
+        <div class="post-body">{{post.contentHTML | safe}}</div>
         <div class="post-date">
             {{ moment(post.posted_date).format('LLLL') }}
         </div>
