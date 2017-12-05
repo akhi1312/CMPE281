@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+ web1:
+   restart: always
+   build: web1
+   expose:
+     - "8081"
+   ports:
+     - "8081:80"
+ web2:
+   restart: always
+   build: web2
+   expose:
+     - "8080"
+   ports:
+     - "8080:80"

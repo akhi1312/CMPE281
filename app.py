@@ -35,6 +35,7 @@ app = Flask(__name__)
 moment = Moment(app)
 Bootstrap(app)
 app.config['SECRET_KEY'] = os.urandom(32)
+app.config['WTF_CSRF_ENABLED'] = False
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_message = "You should be logged in to view this page"
@@ -78,7 +79,7 @@ def initializeRedis():
             for _comm in usercommunities:
                 redis_cache.sadd(user.username,_comm.communityID)
             # print redis_cache.smembers(user.username)
-    
+
 initializeRedis()
 
 def author_images():
@@ -813,7 +814,7 @@ def approveCommunity(communityId):
     sendDeclineMessage(reqUser.contact_number,message)
     return redirect(url_for('admin'))
 
-# Decline Community 
+# Decline Community
 @app.route('/decline_community/<communityId>', methods = ['GET'])
 def declineCommunity(communityId):
     # communityName = request.json['name'].lower()
@@ -1579,6 +1580,4 @@ def send_to_queue(message):
 #     db.session.commit()
 
 if __name__ == '__main__':
-
     app.run(debug = False,threaded=True,host='0.0.0.0',port=3000)
-
